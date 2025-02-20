@@ -2,8 +2,19 @@
 const fileInput = document.getElementById("fileUpload");
 const imagesContainer = document.getElementById("imagesContainer");
 
+const canvasContainer = document.getElementById("canvasContainer");
+const canvas = document.getElementById("renderCanvas");
+const context = canvas.getContext("2d");
+canvas.width = canvasContainer.clientWidth;
+//canvas.height = canvasContainer.clientHeight;
+canvas.height = canvas.width;
+context.strokeStyle = "#fff";
+context.fillStyle = "#fff";
+
 let glb = {};
 let buffers = [];
+
+let angle = 0;
 
 fileInput.onchange = function(e){
 	e.preventDefault();
@@ -122,23 +133,33 @@ function processMeshes(){
 	if(glb.meshes){
 		for(let mesh of glb.meshes){
 			for(let p in mesh.primitives){
+				let indexAccessor = glb.accessors[mesh.primitives[p].indices];
 				let positionAccessor = glb.accessors[mesh.primitives[p].attributes.POSITION];
 				//console.log(positionAccessor);
-				if(positionAccessor.componentType == 5126 && positionAccessor.type.toUpperCase() == "VEC3"){
-					let bufferView = glb.bufferViews[positionAccessor.bufferView];
-					let view = bufferView.view;
-					let byteStride = 4; // 4 bytes for float32
-					if(bufferView.byteStride){
-						byteStride = bufferView.byteStride;
+				if(indexAccessor.componentType == 5123 && indexAccessor.type.toUpperCase() == "SCALAR"){
+					let indexBufferView = glb.bufferViews[indexAccessor.bufferView];
+					let indexView = indexBufferView.view;
+					let indexByteStride = 2; // 2 bytes for Uint16
+					if(indexBufferView.byteStride){
+						indexByteStride = indexBufferView.byteStride;
 					}
-					let count = positionAccessor.count;
+					
+					let positionBufferView = glb.bufferViews[positionAccessor.bufferView];
+					let positionView = positionBufferView.view;
+					let positionByteStride = 4*3; // 4 bytes for float32, *3 for VEC3
+					if(positionBufferView.byteStride){
+						positionByteStride = positionBufferView.byteStride;
+					}
+					
+					let count = indexAccessor.count;
 					
 					let positions = [];
 					
 					for(let i = 0; i < count; i++){
 						positions.push([]);
+						let index = indexView.getUint16(i*indexByteStride, true);
 						for(let c = 0; c < 3; c++){
-							positions[i][c] = view.getFloat32(i*byteStride+c*4, true);
+							positions[i][c] = positionView.getFloat32(index*positionByteStride+c*4, true);
 						}
 					}
 					
@@ -147,22 +168,15 @@ function processMeshes(){
 					//console.log(positions);
 					
 				} else {
-					console.log("Accessor type not implemented yet: "+positionAccessor.type +", "+positionAccessor.componentType);
+					console.log("Accessor type not implemented yet: "+indexAccessor.type +", "+indexAccessor.componentType);
 				}
 			}
 		}
 	}
 }
 
-function displayMeshes(){
-	const canvasContainer = document.getElementById("canvasContainer");
-	const canvas = document.getElementById("renderCanvas");
-	const context = canvas.getContext("2d");
-	canvas.width = canvasContainer.clientWidth;
-	//canvas.height = canvasContainer.clientHeight;
-	canvas.height = canvas.width;
-	context.strokeStyle = "#fff";
-	
+function displayMeshes(){	
+	context.clearRect(0, 0, canvas.width, canvas.height);
 	if(glb.meshes){
 		for(let mesh of glb.meshes){
 			for(let p in mesh.primitives){
@@ -178,20 +192,31 @@ function displayMeshes(){
 							let y = positions[i+v][1];
 							let z = positions[i+v][2];
 							
+							x = x * Math.cos(angle) - z * Math.sin(angle);
+							
 							x = (x + 1.5)/3*canvas.width;
 							y = (y + 1.5)/3*canvas.height;
 							
 							triangle[v] = [x, y];
 						}
+						context.beginPath();
 						context.moveTo(triangle[0][0], triangle[0][1]);
 						context.lineTo(triangle[1][0], triangle[1][1]);
 						context.lineTo(triangle[2][0], triangle[2][1]);
 						context.closePath();
 						context.stroke();
-						console.log(triangle);
+						/*context.beginPath();
+						context.fillRect(triangle[0][0], triangle[0][1], 1, 1);
+						context.fillRect(triangle[1][0], triangle[1][1], 1, 1);
+						context.fillRect(triangle[2][0], triangle[2][1], 1, 1);*/
+						//context.fill();
+						//console.log(triangle);
 					}
 				}
 			}
 		}
 	}
+	
+	angle += 0.01;
+	requestAnimationFrame(displayMeshes);
 }
