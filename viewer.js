@@ -1,20 +1,33 @@
 
 const fileInput = document.getElementById("fileUpload");
+const scaleInput = document.getElementById("scaleInput");
+const offsetYInput = document.getElementById("offsetYInput");
 const imagesContainer = document.getElementById("imagesContainer");
 
 const canvasContainer = document.getElementById("canvasContainer");
 const canvas = document.getElementById("renderCanvas");
 const context = canvas.getContext("2d");
-canvas.width = canvasContainer.clientWidth;
-//canvas.height = canvasContainer.clientHeight;
-canvas.height = canvas.width;
-context.strokeStyle = "#fff";
+const size = Math.min(canvasContainer.clientWidth, canvasContainer.clientHeight);
+canvas.width = size;
+canvas.height = size;
+context.strokeStyle = "#0f0";
 context.fillStyle = "#fff";
 
 let glb = {};
 let buffers = [];
 
 let angle = 0;
+let scale = 0.5;
+let offsetY = 0;
+
+scaleInput.oninput = function(e){
+	scale = parseFloat(scaleInput.value);
+}
+
+offsetYInput.oninput = function(e){
+	offsetY = parseFloat(offsetYInput.value);
+	console.log(offsetY);
+}
 
 fileInput.onchange = function(e){
 	e.preventDefault();
@@ -135,6 +148,10 @@ function processMeshes(){
 			for(let p in mesh.primitives){
 				let indexAccessor = glb.accessors[mesh.primitives[p].indices];
 				let positionAccessor = glb.accessors[mesh.primitives[p].attributes.POSITION];
+				
+				console.log(indexAccessor);
+				console.log(positionAccessor);
+				console.log("-------");
 				//console.log(positionAccessor);
 				if(indexAccessor.componentType == 5123 && indexAccessor.type.toUpperCase() == "SCALAR"){
 					let indexBufferView = glb.bufferViews[indexAccessor.bufferView];
@@ -175,11 +192,19 @@ function processMeshes(){
 	}
 }
 
-function displayMeshes(){	
+function displayMeshes(){
 	context.clearRect(0, 0, canvas.width, canvas.height);
 	if(glb.meshes){
-		for(let mesh of glb.meshes){
+		for(let m in glb.meshes){
+			let mesh = glb.meshes[m];
 			for(let p in mesh.primitives){
+				
+				let r = ((m+3)*57)%200 + 56;
+				let g = ((m+2)*185)%200 + 56;
+				let b = ((m+6)*107)%200 + 56;
+				let color = "rgb("+r+", "+g+", "+b+")";
+				context.strokeStyle = color;
+				
 				let positions = mesh.primitives[p].positions;
 				if(positions){
 					for(let i = 0; i < positions.length; i += 3){
@@ -192,10 +217,12 @@ function displayMeshes(){
 							let y = positions[i+v][1];
 							let z = positions[i+v][2];
 							
+							y = y*-1 + offsetY;
+							
 							x = x * Math.cos(angle) - z * Math.sin(angle);
 							
-							x = (x + 1.5)/3*canvas.width;
-							y = (y + 1.5)/3*canvas.height;
+							x = (x*scale+0.5)*canvas.width;
+							y = (y*scale+0.5)*canvas.height;
 							
 							triangle[v] = [x, y];
 						}

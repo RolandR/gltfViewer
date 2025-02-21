@@ -56,6 +56,24 @@ body{
 
 #canvasContainer{
 	width: 100%;
-	height: 80%;
+	height: 100%;
+	background-color: #040;
+}
+
+#renderCanvas{
 	background-color: #000;
+}
+
+#fileUpload{
+	position: absolute;
+}
+
+#scaleInput, #offsetYInput{
+	position: absolute;
+	width: 500px;
+	top: 30px;
+}
+
+#offsetYInput{
+	top: 60px;
 }
