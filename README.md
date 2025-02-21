@@ -1,0 +1,1 @@
+![Chair wireframe](./chair-lines.png)
