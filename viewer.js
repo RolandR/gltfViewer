@@ -109,7 +109,7 @@ function processFile(file){
 	processImages();
 	processMeshes();
 	processScenes();
-	//displayMeshes();
+	render();
 	
 	setTimeout(function(){
 		loadingStatus.className = "fading";
@@ -134,11 +134,31 @@ function processNodes(nodes){
 		let node = {};
 		node.name = glb.nodes[nodes[n]].name;
 		node.mesh = glb.nodes[nodes[n]].mesh;
-		node.rotation = glb.nodes[nodes[n]].rotation;
-		node.scale = glb.nodes[nodes[n]].scale;
-		node.translation = glb.nodes[nodes[n]].translation;
+		if(glb.nodes[nodes[n]].matrix){
+			node.matrix = glb.nodes[nodes[n]].matrix;
+		} else {
+			node.matrix = [
+				1, 0, 0, 0,
+				0, 1, 0, 0,
+				0, 0, 1, 0,
+				0, 0, 0, 1
+			];
+			
+			if(glb.nodes[nodes[n]].translation){
+				node.matrix = multiplyMatrices(node.matrix, makeTranslationMatrix(glb.nodes[nodes[n]].translation));
+			}
+			
+			if(glb.nodes[nodes[n]].rotation){
+				node.matrix = multiplyMatrices(node.matrix, makeMatrixFromQuaternion(glb.nodes[nodes[n]].rotation));
+			}
+			
+			if(glb.nodes[nodes[n]].scale){
+				node.matrix = multiplyMatrices(node.matrix, makeScaleMatrix(glb.nodes[nodes[n]].scale));
+			}
+		}
 		node.children = processNodes(glb.nodes[nodes[n]].children);
 		outNodes.push(node);
+		
 	}
 	return outNodes;
 }
@@ -176,9 +196,9 @@ function processMeshes(){
 				let indexAccessor = glb.accessors[mesh.primitives[p].indices];
 				let positionAccessor = glb.accessors[mesh.primitives[p].attributes.POSITION];
 				
-				console.log(indexAccessor);
-				console.log(positionAccessor);
-				console.log("-------");
+				//console.log(indexAccessor);
+				//console.log(positionAccessor);
+				//console.log("-------");
 				//console.log(positionAccessor);
 				if(indexAccessor.componentType == 5123 && indexAccessor.type.toUpperCase() == "SCALAR"){
 					let indexBufferView = glb.bufferViews[indexAccessor.bufferView];
@@ -212,65 +232,109 @@ function processMeshes(){
 					//console.log(positions);
 					
 				} else {
-					console.log("Accessor type not implemented yet: "+indexAccessor.type +", "+indexAccessor.componentType);
+					console.error("Accessor type not implemented yet: "+indexAccessor.type +", "+indexAccessor.componentType);
 				}
 			}
 		}
 	}
 }
 
-function displayMeshes(){
-	context.clearRect(0, 0, canvas.width, canvas.height);
-	if(glb.meshes){
-		for(let m in glb.meshes){
-			let mesh = glb.meshes[m];
-			for(let p in mesh.primitives){
-				
-				let r = ((m+3)*57)%200 + 56;
-				let g = ((m+2)*185)%200 + 56;
-				let b = ((m+6)*107)%200 + 56;
-				let color = "rgb("+r+", "+g+", "+b+")";
-				context.strokeStyle = color;
-				
-				let positions = mesh.primitives[p].positions;
-				if(positions){
-					for(let i = 0; i < positions.length; i += 3){
-						if(!positions[i+3]){
-							break;
-						}
-						let triangle = [];
-						for(let v = 0; v < 3; v++){
-							let x = positions[i+v][0];
-							let y = positions[i+v][1];
-							let z = positions[i+v][2];
-							
-							y = y*-1 + offsetY;
-							
-							x = x * Math.cos(angle) - z * Math.sin(angle);
-							
-							x = (x*scale+0.5)*canvas.width;
-							y = (y*scale+0.5)*canvas.height;
-							
-							triangle[v] = [x, y];
-						}
-						context.beginPath();
-						context.moveTo(triangle[0][0], triangle[0][1]);
-						context.lineTo(triangle[1][0], triangle[1][1]);
-						context.lineTo(triangle[2][0], triangle[2][1]);
-						context.closePath();
-						context.stroke();
-						/*context.beginPath();
-						context.fillRect(triangle[0][0], triangle[0][1], 1, 1);
-						context.fillRect(triangle[1][0], triangle[1][1], 1, 1);
-						context.fillRect(triangle[2][0], triangle[2][1], 1, 1);*/
-						//context.fill();
-						//console.log(triangle);
+function render(){
+	renderScene(scenes[0]);
+	requestAnimationFrame(render);
+}
+
+function renderScene(scene){
+	//context.clearRect(0, 0, canvas.width, canvas.height);
+	context.fillStyle = "#000";
+	context.fillRect(0, 0, canvas.width, canvas.height);
+	
+	/*let transform = [
+		1, 0, 0, 0,
+		0, 1, 0, 0,
+		0, 0, 1, 0,
+		0, 0, 0, 1
+	];*/
+	
+	let transform = [
+		Math.cos(angle), 0, Math.sin(angle), 0,
+		0, 1, 0, 0,
+		-Math.sin(angle), 0, Math.cos(angle), 0,
+		0, 0, 0, 1
+	];
+	
+	for(let n in scene.nodes){
+		renderNode(scene.nodes[n], transform);
+	}
+	
+	angle += 0.01;
+}
+
+function renderNode(node, transform){
+	let localTransform = multiplyMatrices(transform, node.matrix);
+	//console.log(localTransform);
+	if(node.mesh !== undefined){
+		let mesh = glb.meshes[node.mesh];
+		for(let p in mesh.primitives){
+			
+			/*let r = ((m+3)*57)%200 + 56;
+			let g = ((m+2)*185)%200 + 56;
+			let b = ((m+6)*107)%200 + 56;
+			let color = "rgb("+r+", "+g+", "+b+")";*/
+			let color = "#0f0";
+			context.strokeStyle = color;
+			
+			let positions = mesh.primitives[p].positions;
+			if(positions){
+				for(let i = 0; i < positions.length; i += 3){
+					if(!positions[i+3]){
+						break;
 					}
+					let triangle = [];
+					for(let v = 0; v < 3; v++){
+						//let x = positions[i+v][0];
+						//let y = positions[i+v][1];
+						//let z = positions[i+v][2];
+						
+						//y = y*-1 + offsetY;
+						//x = x * Math.cos(angle) - z * Math.sin(angle);
+						
+						let pos = [positions[i+v][0], positions[i+v][1], positions[i+v][2]];
+						//pos[1] = pos[1] * -1 + offsetY;
+						
+						let point = makeTranslationMatrix(pos);
+						point = multiplyMatrices(localTransform, point);
+						
+						let x = point[12];
+						let y = point[13];
+						
+						y = y*-1 + offsetY;
+						
+						//console.log(x, y);
+						
+						x = (x*scale+0.5)*canvas.width;
+						y = (y*scale+0.5)*canvas.height;
+						
+						triangle[v] = [x, y];
+					}
+					context.beginPath();
+					context.moveTo(triangle[0][0], triangle[0][1]);
+					context.lineTo(triangle[1][0], triangle[1][1]);
+					context.lineTo(triangle[2][0], triangle[2][1]);
+					context.closePath();
+					context.stroke();
+					/*context.beginPath();
+					context.fillRect(triangle[0][0], triangle[0][1], 1, 1);
+					context.fillRect(triangle[1][0], triangle[1][1], 1, 1);
+					context.fillRect(triangle[2][0], triangle[2][1], 1, 1);*/
+					//context.fill();
+					//console.log(triangle);
 				}
 			}
 		}
 	}
 	
-	angle += 0.01;
-	requestAnimationFrame(displayMeshes);
+	for(let c in node.children){
+		renderNode(node.children[c], localTransform);
+	}
 }
