@@ -108,7 +108,7 @@ function Renderer(canvasId){
 			
 			let size = indices.length;
 			
-			console.log(materials[mesh.primitives[p].material]);
+			//console.log(materials[mesh.primitives[p].material]);
 			
 			let primitive = {
 				 vertices: vertices
@@ -128,21 +128,26 @@ function Renderer(canvasId){
 			let coord = gl.getAttribLocation(shaderProgram, "coordinates");
 			gl.vertexAttribPointer(coord, 3, gl.FLOAT, false, mesh.primitives[p].positionByteStride, 0);
 			gl.enableVertexAttribArray(coord);
+			if(coord == -1) console.error(coord);
 			
 			gl.bindBuffer(gl.ARRAY_BUFFER, primitive.normalsBuffer);
 			gl.bufferData(gl.ARRAY_BUFFER, primitive.normals, gl.STATIC_DRAW);
 			let normal = gl.getAttribLocation(shaderProgram, "vertexNormal");
 			gl.vertexAttribPointer(normal, 3, gl.FLOAT, false, mesh.primitives[p].normalByteStride, 0);
 			gl.enableVertexAttribArray(normal);
+			if(normal == -1) console.error(primitive);
 			
 			gl.bindBuffer(gl.ARRAY_BUFFER, primitive.texCoordBuffer);
 			gl.bufferData(gl.ARRAY_BUFFER, primitive.texCoords, gl.STATIC_DRAW);
 			let texCoord = gl.getAttribLocation(shaderProgram, "texCoord");
 			gl.vertexAttribPointer(texCoord, 2, gl.FLOAT, false, mesh.primitives[p].texCoordByteStride, 0);
 			gl.enableVertexAttribArray(texCoord);
+			if(texCoord == -1) console.error(texCoord);
 			
 			gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, primitive.indexBuffer);
 			gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, primitive.indices, gl.STATIC_DRAW);
+			
+			console.log(primitive.vertices.length/3, primitive.normals.length/3, primitive.texCoords.length/2, primitive.indices.length);
 			
 			primitives.push(primitive);
 		}
@@ -176,9 +181,9 @@ function Renderer(canvasId){
 			gl.UNSIGNED_BYTE,
 			tex.img
 		);
-		console.log(tex.img.width);
+		//console.log(tex.img.width);
 		gl.generateMipmap(gl.TEXTURE_2D);
-		gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+		//gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
 		
 	}
 	
@@ -234,19 +239,22 @@ function Renderer(canvasId){
 				let primitive = mesh.primitives[p];
 				
 				gl.bindBuffer(gl.ARRAY_BUFFER, primitive.normalsBuffer);
-				var normal = gl.getAttribLocation(shaderProgram, "vertexNormal");
+				let normal = gl.getAttribLocation(shaderProgram, "vertexNormal");
 				gl.vertexAttribPointer(normal, 3, gl.FLOAT, false, primitive.normalByteStride, 0);
 				gl.enableVertexAttribArray(normal);
+				if(normal == -1) console.error(normal);
 				
 				gl.bindBuffer(gl.ARRAY_BUFFER, primitive.vertexBuffer);
-				var coord = gl.getAttribLocation(shaderProgram, "coordinates");
+				let coord = gl.getAttribLocation(shaderProgram, "coordinates");
 				gl.vertexAttribPointer(coord, 3, gl.FLOAT, false, primitive.positionByteStride, 0);
 				gl.enableVertexAttribArray(coord);
+				if(coord == -1) console.error(coord);
 				
 				gl.bindBuffer(gl.ARRAY_BUFFER, primitive.texCoordBuffer);
-				var texCoord = gl.getAttribLocation(shaderProgram, "texCoord");
+				let texCoord = gl.getAttribLocation(shaderProgram, "texCoord");
 				gl.vertexAttribPointer(texCoord, 2, gl.FLOAT, false, primitive.texCoordByteStride, 0);
 				gl.enableVertexAttribArray(texCoord);
+				if(texCoord == -1) console.error(texCoord);
 				
 				gl.activeTexture(gl.TEXTURE0);
 				gl.bindTexture(gl.TEXTURE_2D, textures[primitive.material.pbrMetallicRoughness.baseColorTexture.index]);

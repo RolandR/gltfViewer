@@ -39,9 +39,9 @@ void main(void){
 
 	vec4 texColor = texture2D(uSampler, vTexCoord);
 
-	//vec3 fColor = texColor.rgb * max(lighting, emissive);
-	//fColor = mix(fColor, fogColor, fogness);
-	gl_FragColor = texColor;
+	vec3 fColor = texColor.rgb * max(lighting, emissive);
+	fColor = mix(fColor, fogColor, fogness);
+	gl_FragColor = vec4(fColor, 1.0);
 	
 }
 `;

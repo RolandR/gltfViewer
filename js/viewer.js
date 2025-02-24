@@ -114,6 +114,10 @@ function processFile(file){
 	processBuffers();
 	processBufferViews();
 	processImages();
+	setTimeout(finishProcessing, 1000); // TODO: anything but this
+}
+
+function finishProcessing(){
 	processTextures();
 	processMaterials();
 	processMeshes();
@@ -209,6 +213,7 @@ function processTextures(){
 		
 		let sampler = glb.samplers[tex.sampler];
 		let img = images[tex.source];
+		//console.log(img, img.width, img.height);
 		
 		gl.addTexture({
 			id: t,
@@ -322,6 +327,10 @@ function processMeshes(){
 				let normalView = new Float32Array(normalBufferView.byteLength/4);
 				for(let i = 0; i < normalBufferView.byteLength/4; i++){
 					normalView[i] = normalBufferView.view.getFloat32(i*4, true);
+				}
+				
+				if(mesh.primitives[p].attributes.TEXCOORD_0 === undefined){
+					console.error(mesh.primitives[p].attributes);
 				}
 				
 				let texCoordAccessor = glb.accessors[mesh.primitives[p].attributes.TEXCOORD_0]; //note: this isn't necessarily always TEXCOORD_0. In this case, we'd fall flat on our face.
