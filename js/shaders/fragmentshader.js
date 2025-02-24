@@ -1,7 +1,7 @@
 var fragmentShader = `
 precision mediump float;
 
-uniform lowp vec3 color;
+uniform lowp vec4 color;
 
 uniform highp mat4 model;
 uniform highp mat4 view;
@@ -13,10 +13,13 @@ varying float fogness;
 uniform lowp float shiny;
 uniform lowp float emissive;
 
+uniform sampler2D uSampler;
+
 vec3 fogColor = vec3(0.5, 0.3, 0.3);
 vec3 lighting = vec3(0.0, 0.0, 0.0);
 
 varying vec3 normal;
+varying vec2 vTexCoord;
 
 void main(void){
 
@@ -34,9 +37,11 @@ void main(void){
 	
     lighting = ambientLight + (directionalLightColor * directional * 1.0) + (directionalLightColor * specular * 0.8);
 
-	vec3 fColor = color * max(lighting, emissive);
-	fColor = mix(fColor, fogColor, fogness);
-	gl_FragColor = vec4(fColor, 1.0);
+	vec4 texColor = texture2D(uSampler, vTexCoord);
+
+	//vec3 fColor = texColor.rgb * max(lighting, emissive);
+	//fColor = mix(fColor, fogColor, fogness);
+	gl_FragColor = texColor;
 	
 }
 `;

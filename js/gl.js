@@ -13,6 +13,8 @@ function Renderer(canvasId){
 	
 	var scene = null;
 	var meshes = [];
+	var materials = [];
+	var textures = [];
 
 	var transformMatrixRef;
 	var normalTransformRef;
@@ -87,6 +89,7 @@ function Renderer(canvasId){
 		colorRef = gl.getUniformLocation(shaderProgram, "color");
 		emissiveRef = gl.getUniformLocation(shaderProgram, "emissive");
 		shinyRef = gl.getUniformLocation(shaderProgram, "shiny");
+		samplerRef = gl.getUniformLocation(shaderProgram, "uSampler");
 	}
 	
 	function addMesh(mesh){
@@ -99,34 +102,44 @@ function Renderer(canvasId){
 			let vertices = mesh.primitives[p].positionView;
 			let normals = mesh.primitives[p].normalView;
 			let indices = mesh.primitives[p].indexView;
+			let texCoords = mesh.primitives[p].texCoordView;
 			
 			//console.log(indices.length);
 			
 			let size = indices.length;
 			
+			console.log(materials[mesh.primitives[p].material]);
+			
 			let primitive = {
 				 vertices: vertices
 				,normals: normals
 				,indices: indices
+				,texCoords: texCoords
 				,vertexBuffer: gl.createBuffer()
 				,normalsBuffer: gl.createBuffer()
 				,indexBuffer: gl.createBuffer()
+				,texCoordBuffer: gl.createBuffer()
 				,size: size
+				,material: materials[mesh.primitives[p].material]
 			};
 			
 			gl.bindBuffer(gl.ARRAY_BUFFER, primitive.vertexBuffer);
 			gl.bufferData(gl.ARRAY_BUFFER, primitive.vertices, gl.STATIC_DRAW);
-			
 			let coord = gl.getAttribLocation(shaderProgram, "coordinates");
 			gl.vertexAttribPointer(coord, 3, gl.FLOAT, false, mesh.primitives[p].positionByteStride, 0);
 			gl.enableVertexAttribArray(coord);
 			
 			gl.bindBuffer(gl.ARRAY_BUFFER, primitive.normalsBuffer);
 			gl.bufferData(gl.ARRAY_BUFFER, primitive.normals, gl.STATIC_DRAW);
-			
 			let normal = gl.getAttribLocation(shaderProgram, "vertexNormal");
 			gl.vertexAttribPointer(normal, 3, gl.FLOAT, false, mesh.primitives[p].normalByteStride, 0);
 			gl.enableVertexAttribArray(normal);
+			
+			gl.bindBuffer(gl.ARRAY_BUFFER, primitive.texCoordBuffer);
+			gl.bufferData(gl.ARRAY_BUFFER, primitive.texCoords, gl.STATIC_DRAW);
+			let texCoord = gl.getAttribLocation(shaderProgram, "texCoord");
+			gl.vertexAttribPointer(texCoord, 2, gl.FLOAT, false, mesh.primitives[p].texCoordByteStride, 0);
+			gl.enableVertexAttribArray(texCoord);
 			
 			gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, primitive.indexBuffer);
 			gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, primitive.indices, gl.STATIC_DRAW);
@@ -141,8 +154,32 @@ function Renderer(canvasId){
 		};
 	}
 	
+	function addMaterial(material){
+		materials[material.id] = material;
+	}
+	
 	function addScene(s){
 		scene = s;
+	}
+	
+	function addTexture(tex){
+		textures[tex.id] = gl.createTexture();
+		gl.bindTexture(gl.TEXTURE_2D, textures[tex.id]);
+		gl.texImage2D(
+			gl.TEXTURE_2D,
+			0,
+			gl.RGB,
+			//tex.img.width,
+			//tex.img.height,
+			//0,
+			gl.RGB,
+			gl.UNSIGNED_BYTE,
+			tex.img
+		);
+		console.log(tex.img.width);
+		gl.generateMipmap(gl.TEXTURE_2D);
+		gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+		
 	}
 	
 	function render(model, view, perspective){
@@ -180,6 +217,8 @@ function Renderer(canvasId){
 
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 		
+		gl.enable(gl.BLEND);
+		gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 		
 		for(let n in scene.nodes){
 			renderNode(scene.nodes[n], model);
@@ -204,7 +243,17 @@ function Renderer(canvasId){
 				gl.vertexAttribPointer(coord, 3, gl.FLOAT, false, primitive.positionByteStride, 0);
 				gl.enableVertexAttribArray(coord);
 				
-				gl.uniform3f(colorRef, 0.1, 0.9, 0.1);
+				gl.bindBuffer(gl.ARRAY_BUFFER, primitive.texCoordBuffer);
+				var texCoord = gl.getAttribLocation(shaderProgram, "texCoord");
+				gl.vertexAttribPointer(texCoord, 2, gl.FLOAT, false, primitive.texCoordByteStride, 0);
+				gl.enableVertexAttribArray(texCoord);
+				
+				gl.activeTexture(gl.TEXTURE0);
+				gl.bindTexture(gl.TEXTURE_2D, textures[primitive.material.pbrMetallicRoughness.baseColorTexture.index]);
+				gl.uniform1i(samplerRef, 0);
+				
+				let color = primitive.material.pbrMetallicRoughness.baseColorFactor;
+				gl.uniform4f(colorRef, color[0], color[1], color[2], color[3]);
 				gl.uniform1f(shinyRef, 0.2);
 				gl.uniform1f(emissiveRef, 0);
 				
@@ -229,6 +278,8 @@ function Renderer(canvasId){
 	return{
 		 addMesh: addMesh
 		,addScene: addScene
+		,addMaterial: addMaterial
+		,addTexture: addTexture
 		,render: render
 	};
 

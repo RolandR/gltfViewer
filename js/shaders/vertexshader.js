@@ -13,14 +13,17 @@ uniform float maxDistance;
 
 attribute vec3 coordinates;
 attribute vec3 vertexNormal;
+attribute vec2 texCoord;
 
 varying highp vec3 lighting;
 varying float fogness;
 varying vec3 normal;
+varying vec2 vTexCoord;
 
 void main(void){
 	
 	normal = vertexNormal;
+	vTexCoord = texCoord;
 	
 	vec4 coords = vec4(coordinates, 1.0);
 

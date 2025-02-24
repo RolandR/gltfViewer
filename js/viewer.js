@@ -6,6 +6,9 @@ const imagesContainer = document.getElementById("imagesContainer");
 
 const canvasContainer = document.getElementById("canvasContainer");
 const canvas = document.getElementById("renderCanvas");
+
+const defaultTexture = document.getElementById("defaultTexture");
+
 /*const context = canvas.getContext("2d");
 const size = Math.min(canvasContainer.clientWidth, canvasContainer.clientHeight);
 canvas.width = size;
@@ -19,6 +22,9 @@ let glb = {};
 let buffers = [];
 let scenes = [];
 let nodes = [];
+let materials = [];
+let images = [];
+let textures = [];
 
 let angle = 0;
 let scale = 0.5;
@@ -108,6 +114,8 @@ function processFile(file){
 	processBuffers();
 	processBufferViews();
 	processImages();
+	processTextures();
+	processMaterials();
 	processMeshes();
 	processScenes();
 	render();
@@ -180,13 +188,97 @@ function processBufferViews(){
 
 function processImages(){
 	if(glb.images){
-		for(let img of glb.images){
+		for(let i in glb.images){
+			let img = glb.images[i];
 			let imageData = new Blob([glb.bufferViews[img.bufferView].view], {type: img.mimeType});
 			let imageUrl = URL.createObjectURL(imageData);
 			let imgEl = new Image;
 			imagesContainer.appendChild(imgEl);
 			imgEl.src = imageUrl;
 			img.image = imgEl;
+			
+			images[i] = imgEl;
+			//console.log(imgEl);
+		}
+	}
+}
+
+function processTextures(){
+	for(let t in glb.textures){
+		let tex = glb.textures[t];
+		
+		let sampler = glb.samplers[tex.sampler];
+		let img = images[tex.source];
+		
+		gl.addTexture({
+			id: t,
+			img: img,
+			sampler: sampler
+		});
+	}
+}
+
+function processMaterials(){
+	if(glb.materials){
+		for(let m in glb.materials){
+			let mat = glb.materials[m];
+			
+			let material = {
+				id: m,
+				name: "default",
+				pbrMetallicRoughness: {
+					baseColorTexture: {
+						index: 0,
+						texCoord: 0
+					},
+					baseColorFactor: [1, 1, 1, 1],
+					metallicFactor: 1,
+					roughnessFactor: 1
+				},
+				emissiveFactor: [0, 0, 0],
+				alphaMode: "OPAQUE",
+				alphaCutoff: 0.5,
+				doubleSided: false
+			};
+			
+			if(mat.name){
+				material.name = mat.name;
+			}
+			if(mat.pbrMetallicRoughness){
+				if(mat.pbrMetallicRoughness.baseColorTexture){
+					if(mat.pbrMetallicRoughness.baseColorTexture.index){
+						material.pbrMetallicRoughness.baseColorTexture.index = mat.pbrMetallicRoughness.baseColorTexture.index;
+					}
+					if(mat.pbrMetallicRoughness.baseColorTexture.texCoord){
+						material.pbrMetallicRoughness.baseColorTexture.texCoord = mat.pbrMetallicRoughness.baseColorTexture.texCoord;
+					}
+				}
+				if(mat.pbrMetallicRoughness.baseColorFactor){
+					material.pbrMetallicRoughness.baseColorFactor = mat.pbrMetallicRoughness.baseColorFactor;
+				}
+				if(mat.pbrMetallicRoughness.metallicFactor){
+					material.pbrMetallicRoughness.metallicFactor = mat.pbrMetallicRoughness.metallicFactor;
+				}
+				if(mat.pbrMetallicRoughness.roughnessFactor){
+					material.pbrMetallicRoughness.roughnessFactor = mat.pbrMetallicRoughness.roughnessFactor;
+				}
+			}
+			if(mat.emissiveFactor){
+				material.emissiveFactor = mat.emissiveFactor;
+			}
+			if(mat.alphaMode){
+				material.alphaMode = mat.alphaMode;
+			}
+			if(mat.alphaCutoff){
+				material.alphaCutoff = mat.alphaCutoff;
+			}
+			if(mat.doubleSided){
+				material.doubleSided = mat.doubleSided;
+			}
+			
+			materials[m] = material;
+			
+			gl.addMaterial(material);
 		}
 	}
 }
@@ -201,7 +293,6 @@ function processMeshes(){
 				
 				let indexAccessor = glb.accessors[mesh.primitives[p].indices];
 				let indexBufferView = glb.bufferViews[indexAccessor.bufferView];
-				//let indexView = indexBufferView.view;
 				let indexByteStride = 2; // 2 bytes for Uint16
 				if(indexBufferView.byteStride){
 					indexByteStride = indexBufferView.byteStride;
@@ -213,7 +304,6 @@ function processMeshes(){
 					
 				let positionAccessor = glb.accessors[mesh.primitives[p].attributes.POSITION];
 				let positionBufferView = glb.bufferViews[positionAccessor.bufferView];
-				//let positionView = positionBufferView.view;
 				let positionByteStride = 4*3; // 4 bytes for float32, *3 for VEC3
 				if(positionBufferView.byteStride){
 					positionByteStride = positionBufferView.byteStride;
@@ -225,7 +315,6 @@ function processMeshes(){
 				
 				let normalAccessor = glb.accessors[mesh.primitives[p].attributes.NORMAL];
 				let normalBufferView = glb.bufferViews[normalAccessor.bufferView];
-				//let normalView = normalBufferView.view;
 				let normalByteStride = 4*3; // 4 bytes for float32, *3 for VEC3
 				if(normalBufferView.byteStride){
 					normalByteStride = normalBufferView.byteStride;
@@ -235,13 +324,27 @@ function processMeshes(){
 					normalView[i] = normalBufferView.view.getFloat32(i*4, true);
 				}
 				
+				let texCoordAccessor = glb.accessors[mesh.primitives[p].attributes.TEXCOORD_0]; //note: this isn't necessarily always TEXCOORD_0. In this case, we'd fall flat on our face.
+				let texCoordBufferView = glb.bufferViews[texCoordAccessor.bufferView];
+				let texCoordByteStride = 4*2; // 4 bytes for float32, *2 for VEC2
+				if(texCoordBufferView.byteStride){
+					texCoordByteStride = texCoordBufferView.byteStride;
+				}
+				let texCoordView = new Float32Array(texCoordBufferView.byteLength/4);
+				for(let i = 0; i < texCoordBufferView.byteLength/4; i++){
+					texCoordView[i] = texCoordBufferView.view.getFloat32(i*4, true);
+				}
+				
 				primitives.push({
 					indexView: indexView,
 					indexByteStride: indexByteStride,
 					positionView: positionView,
 					positionByteStride: positionByteStride,
 					normalView: normalView,
-					normalByteStride: normalByteStride
+					normalByteStride: normalByteStride,
+					texCoordView: texCoordView,
+					texCoordByteStride: texCoordByteStride,
+					material: mesh.primitives[p].material
 				});
 			}
 			
