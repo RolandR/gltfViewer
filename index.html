@@ -10,7 +10,7 @@
 	<body>
 	<body>
 		<input type="file" id="fileUpload" accept=".glb">
-		<input type="range" id="scaleInput" min="0.05" max="3" step="0.01" value="0.5">
+		<input type="range" id="scaleInput" min="0.001" max="2" step="0.001" value="0.5">
 		<input type="range" id="offsetYInput" min="-1" max="1" step="0.01" value="0">
 		<div id="canvasContainer">
 			<canvas id="renderCanvas"></canvas>
@@ -25,6 +25,9 @@
 			</div>
 		</div>
 	</body>
-	<script type="text/javascript" src="./matrix.js"></script>
-	<script type="text/javascript" src="./viewer.js"></script>
+	<script type="text/javascript" src="./js/matrix.js"></script>
+	<script type="text/javascript" src="./js/shaders/vertexshader.js"></script>
+	<script type="text/javascript" src="./js/shaders/fragmentshader.js"></script>
+	<script type="text/javascript" src="./js/gl.js"></script>
+	<script type="text/javascript" src="./js/viewer.js"></script>
 </html>
