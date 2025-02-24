@@ -15,6 +15,8 @@ context.fillStyle = "#fff";
 
 let glb = {};
 let buffers = [];
+let scenes = [];
+let nodes = [];
 
 let angle = 0;
 let scale = 0.5;
@@ -106,7 +108,8 @@ function processFile(file){
 	processBufferViews();
 	processImages();
 	processMeshes();
-	displayMeshes();
+	processScenes();
+	//displayMeshes();
 	
 	setTimeout(function(){
 		loadingStatus.className = "fading";
@@ -114,6 +117,30 @@ function processFile(file){
 			loadingStatus.style.display = "none";
 		}, 500);
 	}, 100);
+}
+
+function processScenes(){
+	for(let i in glb.scenes){
+		scenes[i] = {
+			nodes: processNodes(glb.scenes[i].nodes)
+		};
+	}
+	console.log(scenes);
+}
+
+function processNodes(nodes){
+	let outNodes = [];
+	for(let n in nodes){
+		let node = {};
+		node.name = glb.nodes[nodes[n]].name;
+		node.mesh = glb.nodes[nodes[n]].mesh;
+		node.rotation = glb.nodes[nodes[n]].rotation;
+		node.scale = glb.nodes[nodes[n]].scale;
+		node.translation = glb.nodes[nodes[n]].translation;
+		node.children = processNodes(glb.nodes[nodes[n]].children);
+		outNodes.push(node);
+	}
+	return outNodes;
 }
 
 function processBuffers(){
