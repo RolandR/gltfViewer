@@ -370,7 +370,7 @@ function processMeshes(){
 
 function render(){
 	
-	let fieldOfViewInRadians = 50/180*Math.PI;
+	let fieldOfViewInRadians = 60/180*Math.PI;
 	let aspectRatio = canvas.width/canvas.height;
 	let near = 0.001;
 	let far = 5;
@@ -379,19 +379,45 @@ function render(){
 	let rangeInv = 1 / (near - far);
 	
 	let modelTransform = [
-		scale, 0, 0, 0,
-		0, scale, 0, 0,
-		0, 0, scale, 0,
-		0, offsetY, 0, 1
+		1, 0, 0, 0,
+		0, 1, 0, 0,
+		0, 0, 1, 0,
+		0, 0, 0, 1
 	];
 	
 	let a = angle;
-	let viewTransform = [
+	let rotateTransform = [
 		 Math.cos(a),   0, Math.sin(a),   0,
 			  0,   1,      0,   0,
 		-Math.sin(a),   0, Math.cos(a),   0,
 			  0,   0,      -1,   1
-	]
+	];
+	
+	let scaleTransform = [
+		scale, 0, 0, 0,
+		0, scale, 0, 0,
+		0, 0, scale, 0,
+		0, 0, 0, 1
+	];
+	
+	let offsetTransform = [
+		1, 0, 0, 0,
+		0, 1, 0, 0,
+		0, 0, 1, 0,
+		0, offsetY, 0, 1
+	];
+	
+	let viewTransform = multiplyArrayOfMatrices([
+		[
+			1, 0, 0, 0,
+			0, 1, 0, 0,
+			0, 0, 1, 0,
+			0, 0, 0, 1
+		],
+		scaleTransform,
+		offsetTransform,
+		rotateTransform
+	]);
 
 	let perspectiveTransform = [
 		f / aspectRatio, 0,                          0,   0,

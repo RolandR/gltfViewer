@@ -6,7 +6,7 @@ function Renderer(canvasId){
 	canvas.width = document.getElementById("canvasContainer").clientWidth;
 	canvas.height = document.getElementById("canvasContainer").clientHeight;
 	
-	var gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
+	var gl = canvas.getContext("webgl2", {premultipliedAlpha: false});
 
 	var shaderProgram;
 	var size;
@@ -15,6 +15,8 @@ function Renderer(canvasId){
 	var meshes = [];
 	var materials = [];
 	var textures = [];
+	
+	var transparentPrimitives = [];
 
 	var transformMatrixRef;
 	var normalTransformRef;
@@ -173,11 +175,11 @@ function Renderer(canvasId){
 		gl.texImage2D(
 			gl.TEXTURE_2D,
 			0,
-			gl.RGB,
+			gl.RGBA,
 			//tex.img.width,
 			//tex.img.height,
 			//0,
-			gl.RGB,
+			gl.RGBA,
 			gl.UNSIGNED_BYTE,
 			tex.img
 		);
@@ -206,28 +208,33 @@ function Renderer(canvasId){
 			transformMatrix[i] = transformMatrix[i] * (1-interpolation) + identityMatrix[i] * interpolation;
 		}*/
 		
-		var normalsMatrix = normalMatrix(model);
+		//var normalsMatrix = normalMatrix(model);
 
 		gl.uniform1f(maxDistanceRef, 8.0);
 		
 		gl.uniformMatrix4fv(viewRef, false, view);
 		gl.uniformMatrix4fv(perspectiveRef, false, perspective);
-		gl.uniformMatrix4fv(normalTransformRef, false, normalsMatrix);
+		//gl.uniformMatrix3fv(normalTransformRef, false, normalsMatrix);
 		gl.uniform1f(aspectRef, canvas.width/canvas.height);
 
 		// Clear the canvas
-		gl.clearColor(0, 0, 1, 1);
+		gl.clearColor(1, 1, 1, 1);
 		
 		gl.viewport(0, 0, canvas.width, canvas.height);
 
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 		
-		gl.enable(gl.BLEND);
-		gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+		//gl.enable(gl.DEPTH_TEST);
+		gl.disable(gl.BLEND);
 		
 		for(let n in scene.nodes){
 			renderNode(scene.nodes[n], model);
 		}
+		
+		gl.enable(gl.BLEND);
+		gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+		
+		renderTransparentPrimitives();
 	}
 	
 	function renderNode(node, transform){
@@ -238,49 +245,69 @@ function Renderer(canvasId){
 			for(let p in mesh.primitives){
 				let primitive = mesh.primitives[p];
 				
-				gl.bindBuffer(gl.ARRAY_BUFFER, primitive.normalsBuffer);
-				let normal = gl.getAttribLocation(shaderProgram, "vertexNormal");
-				gl.vertexAttribPointer(normal, 3, gl.FLOAT, false, primitive.normalByteStride, 0);
-				gl.enableVertexAttribArray(normal);
-				if(normal == -1) console.error(normal);
-				
-				gl.bindBuffer(gl.ARRAY_BUFFER, primitive.vertexBuffer);
-				let coord = gl.getAttribLocation(shaderProgram, "coordinates");
-				gl.vertexAttribPointer(coord, 3, gl.FLOAT, false, primitive.positionByteStride, 0);
-				gl.enableVertexAttribArray(coord);
-				if(coord == -1) console.error(coord);
-				
-				gl.bindBuffer(gl.ARRAY_BUFFER, primitive.texCoordBuffer);
-				let texCoord = gl.getAttribLocation(shaderProgram, "texCoord");
-				gl.vertexAttribPointer(texCoord, 2, gl.FLOAT, false, primitive.texCoordByteStride, 0);
-				gl.enableVertexAttribArray(texCoord);
-				if(texCoord == -1) console.error(texCoord);
-				
-				gl.activeTexture(gl.TEXTURE0);
-				gl.bindTexture(gl.TEXTURE_2D, textures[primitive.material.pbrMetallicRoughness.baseColorTexture.index]);
-				gl.uniform1i(samplerRef, 0);
-				
-				let color = primitive.material.pbrMetallicRoughness.baseColorFactor;
-				gl.uniform4f(colorRef, color[0], color[1], color[2], color[3]);
-				gl.uniform1f(shinyRef, 0.2);
-				gl.uniform1f(emissiveRef, 0);
-				
-				gl.uniformMatrix4fv(modelRef, false, localTransform);
-				
-				
-				gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, primitive.indexBuffer);
-				
-				//console.log(gl.getProgramInfoLog(shaderProgram));
-				
-				//console.log(mesh.name);
-				//console.log(primitive);
-				gl.drawElements(gl.TRIANGLES, primitive.size, gl.UNSIGNED_SHORT, 0);
+				if(primitive.material.alphaMode == "BLEND"){
+					transparentPrimitives.push({
+						transform: localTransform,
+						primitive: primitive
+					});
+				} else {
+					renderPrimitive(primitive, localTransform);
+				}
 			}
 		}
 		
 		for(let c in node.children){
 			renderNode(node.children[c], localTransform);
 		}
+	}
+	
+	function renderPrimitive(primitive, localTransform){
+		gl.bindBuffer(gl.ARRAY_BUFFER, primitive.normalsBuffer);
+		let normal = gl.getAttribLocation(shaderProgram, "vertexNormal");
+		gl.vertexAttribPointer(normal, 3, gl.FLOAT, false, primitive.normalByteStride, 0);
+		gl.enableVertexAttribArray(normal);
+		//if(normal == -1) console.error(normal);
+		
+		gl.bindBuffer(gl.ARRAY_BUFFER, primitive.vertexBuffer);
+		let coord = gl.getAttribLocation(shaderProgram, "coordinates");
+		gl.vertexAttribPointer(coord, 3, gl.FLOAT, false, primitive.positionByteStride, 0);
+		gl.enableVertexAttribArray(coord);
+		//if(coord == -1) console.error(coord);
+		
+		gl.bindBuffer(gl.ARRAY_BUFFER, primitive.texCoordBuffer);
+		let texCoord = gl.getAttribLocation(shaderProgram, "texCoord");
+		gl.vertexAttribPointer(texCoord, 2, gl.FLOAT, false, primitive.texCoordByteStride, 0);
+		gl.enableVertexAttribArray(texCoord);
+		//if(texCoord == -1) console.error(texCoord);
+		
+		gl.activeTexture(gl.TEXTURE0);
+		gl.bindTexture(gl.TEXTURE_2D, textures[primitive.material.pbrMetallicRoughness.baseColorTexture.index]);
+		gl.uniform1i(samplerRef, 0);
+		
+		let color = primitive.material.pbrMetallicRoughness.baseColorFactor;
+		gl.uniform4f(colorRef, color[0], color[1], color[2], color[3]);
+		gl.uniform1f(shinyRef, 0.2);
+		gl.uniform1f(emissiveRef, 0);
+		
+		gl.uniformMatrix4fv(modelRef, false, localTransform);
+		let localNormalMatrix = normalMatrix(localTransform);
+		gl.uniformMatrix4fv(normalTransformRef, false, localNormalMatrix);
+		
+		
+		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, primitive.indexBuffer);
+		
+		//console.log(gl.getProgramInfoLog(shaderProgram));
+		
+		//console.log(mesh.name);
+		//console.log(primitive);
+		gl.drawElements(gl.TRIANGLES, primitive.size, gl.UNSIGNED_SHORT, 0);
+	}
+	
+	function renderTransparentPrimitives(){
+		for(let i in transparentPrimitives){
+			renderPrimitive(transparentPrimitives[i].primitive, transparentPrimitives[i].transform);
+		}
+		transparentPrimitives = [];
 	}
 
 	return{

@@ -2,7 +2,7 @@
 
 
 
-var vertexShader = `
+var vertexShader = `#version 300 es
 
 uniform highp mat4 model;
 uniform highp mat4 view;
@@ -11,18 +11,18 @@ uniform highp mat4 normalTransform;
 uniform float aspect;
 uniform float maxDistance;
 
-attribute vec3 coordinates;
-attribute vec3 vertexNormal;
-attribute vec2 texCoord;
+in vec3 coordinates;
+in vec3 vertexNormal;
+in vec2 texCoord;
 
-varying highp vec3 lighting;
-varying float fogness;
-varying vec3 normal;
-varying vec2 vTexCoord;
+out highp vec3 lighting;
+out float fogness;
+out vec3 normal;
+out vec2 vTexCoord;
 
 void main(void){
 	
-	normal = vertexNormal;
+	normal = normalize(normalTransform * vec4(vertexNormal, 1.0)).xyz;
 	vTexCoord = texCoord;
 	
 	vec4 coords = vec4(coordinates, 1.0);
