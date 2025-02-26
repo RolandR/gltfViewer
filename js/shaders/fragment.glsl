@@ -39,26 +39,18 @@ void main(void){
     
     highp vec4 cameraLocation = vec4(0.0, 0.0, cameraZ, 1.0);
     
-    //cameraLocation.z = cameraLocation.z + 1.0;
-    
     highp vec4 localCamera = cameraLocation;
     
     vec4 localCoord = coord;
-    localCoord.z = -1.0;
+    localCoord.z = 0.0; // todo: this doesn't quite work with perspective
     
     highp vec4 viewDirection = normalize(localCoord-cameraLocation);
     
     vec3 vd = normalize(inverse(view)*viewDirection).xyz;
     
-    //highp vec3 localViewDirection = normalize(inverse(transpose(mat3(view)))*viewDirection.xyz);
-    
     highp vec3 reflectedDirection = normalize(reflect(vd, normal));
-    //reflectedDirection = normalize(inverse(transpose(mat3(view)))*reflectedDirection);
     
-    vec4 skybox = texture(uSkyboxSampler, vd);
-    //vec4 skybox = texture(uSkyboxSampler, reflectedDirection);
-    
-    //vec4 texColor = texture(uSkyboxSampler, normal);
+    vec4 skybox = texture(uSkyboxSampler, reflectedDirection);
 
 	//highp float directional = clamp(dot(directionalVector, localNormal), 0.0, 1.0);
 	
@@ -70,12 +62,6 @@ void main(void){
 
 	//vec3 fColor = texColor.rgb * max(lighting, emissive);
 	//fColor = mix(fColor, fogColor, fogness);
-	
-	//fragColor = vec4(fColor, texColor.a);
-	//fragColor = vec4(texColor.rgb, texColor.a);
-	
 	fragColor = vec4(texColor.xyz, texColor.a);
-	
-	//fragColor = vec4(normalize(vec3(perspective*view*vec4(normal, 1.0))), 1.0);
 	
 }

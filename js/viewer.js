@@ -30,7 +30,7 @@ let textures = [];
 let angle = 0;
 let scale = 0.5;
 let offsetY = 0;
-let cameraZ = 1;
+let cameraZ = 1.8;
 
 let outstandingImageCount = 0;
 
@@ -532,7 +532,7 @@ function processMeshes(){
 
 function render(){
 	
-	let fieldOfViewInRadians = 60/180*Math.PI;
+	let fieldOfViewInRadians = 10/180*Math.PI;
 	let aspectRatio = canvas.width/canvas.height;
 	let near = 0.001;
 	let far = 5;
