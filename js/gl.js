@@ -23,6 +23,12 @@ function Renderer(canvasId){
 	var aspectRef;
 	var colorRef;
 	
+	var samplerRef;
+	var normalSamplerRef;
+	var skyboxSamplerRef;
+	
+	let skyboxTexture;
+	
 	init();
 
 	function init(){
@@ -92,6 +98,32 @@ function Renderer(canvasId){
 		emissiveRef = gl.getUniformLocation(shaderProgram, "emissive");
 		shinyRef = gl.getUniformLocation(shaderProgram, "shiny");
 		samplerRef = gl.getUniformLocation(shaderProgram, "uSampler");
+		normalSamplerRef = gl.getUniformLocation(shaderProgram, "uNormalSampler");
+		skyboxSamplerRef = gl.getUniformLocation(shaderProgram, "uSkyboxSampler");
+		
+	}
+	
+	function loadSkybox(){
+		const skyboxUp = document.getElementById("skybox-up");
+		const skyboxDn = document.getElementById("skybox-dn");
+		const skyboxFt = document.getElementById("skybox-ft");
+		const skyboxBk = document.getElementById("skybox-bk");
+		const skyboxLf = document.getElementById("skybox-lf");
+		const skyboxRt = document.getElementById("skybox-rt");
+		
+		skyboxTexture = gl.createTexture();
+		gl.bindTexture(gl.TEXTURE_CUBE_MAP, skyboxTexture);
+		
+		gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_Y, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, skyboxUp);
+		gl.texImage2D(gl.TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, skyboxDn);
+		gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_Z, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, skyboxRt);
+		gl.texImage2D(gl.TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, skyboxLf);
+		gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_X, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, skyboxFt);
+		gl.texImage2D(gl.TEXTURE_CUBE_MAP_NEGATIVE_X, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, skyboxBk);
+		
+		gl.generateMipmap(gl.TEXTURE_CUBE_MAP);
+		gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+		gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
 	}
 	
 	function addMesh(mesh){
@@ -284,6 +316,10 @@ function Renderer(canvasId){
 		gl.bindTexture(gl.TEXTURE_2D, textures[primitive.material.pbrMetallicRoughness.baseColorTexture.index]);
 		gl.uniform1i(samplerRef, 0);
 		
+		gl.activeTexture(gl.TEXTURE1);
+		gl.bindTexture(gl.TEXTURE_CUBE_MAP, skyboxTexture);
+		gl.uniform1i(skyboxSamplerRef, 1);
+		
 		let color = primitive.material.pbrMetallicRoughness.baseColorFactor;
 		gl.uniform4f(colorRef, color[0], color[1], color[2], color[3]);
 		gl.uniform1f(shinyRef, 0.2);
@@ -315,6 +351,7 @@ function Renderer(canvasId){
 		,addScene: addScene
 		,addMaterial: addMaterial
 		,addTexture: addTexture
+		,loadSkybox: loadSkybox
 		,render: render
 	};
 

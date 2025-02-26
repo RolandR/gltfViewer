@@ -19,6 +19,7 @@ out highp vec3 lighting;
 out float fogness;
 out vec3 normal;
 out vec2 vTexCoord;
+out vec4 coord;
 
 void main(void){
 	
@@ -30,6 +31,8 @@ void main(void){
 	coords = perspective * view * model * coords;
 	
 	fogness = clamp(length(coords)/maxDistance, 0.0, 1.0);
+	
+	coord = coords;
 
 	gl_Position = coords;
 }

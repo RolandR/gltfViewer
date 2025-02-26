@@ -118,6 +118,7 @@ function processFile(file){
 }
 
 function finishProcessing(){
+	gl.loadSkybox();
 	processTextures();
 	processMaterials();
 	processMeshes();
@@ -240,6 +241,10 @@ function processMaterials(){
 					metallicFactor: 1,
 					roughnessFactor: 1
 				},
+				/*normalTexture:{
+					id: 0,
+					scale: 0
+				}*/
 				emissiveFactor: [0, 0, 0],
 				alphaMode: "OPAQUE",
 				alphaCutoff: 0.5,
@@ -271,6 +276,11 @@ function processMaterials(){
 			if(mat.emissiveFactor){
 				material.emissiveFactor = mat.emissiveFactor;
 			}
+			/*if(mat.normalTexture){
+				if(mat.normalTexture.id){
+					
+				}
+			}*/
 			if(mat.alphaMode){
 				material.alphaMode = mat.alphaMode;
 			}
