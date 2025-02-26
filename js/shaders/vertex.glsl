@@ -1,8 +1,4 @@
-
-
-
-
-var vertexShader = `#version 300 es
+#version 300 es
 
 uniform highp mat4 model;
 uniform highp mat4 view;
@@ -36,5 +32,3 @@ void main(void){
 
 	gl_Position = coords;
 }
-
-`;

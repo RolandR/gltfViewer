@@ -103,13 +103,13 @@ function Renderer(canvasId){
 		
 	}
 	
-	function loadSkybox(){
-		const skyboxUp = document.getElementById("skybox-up");
-		const skyboxDn = document.getElementById("skybox-dn");
-		const skyboxFt = document.getElementById("skybox-ft");
-		const skyboxBk = document.getElementById("skybox-bk");
-		const skyboxLf = document.getElementById("skybox-lf");
-		const skyboxRt = document.getElementById("skybox-rt");
+	function loadSkybox(skyboxTextures){
+		const skyboxUp = skyboxTextures.up;
+		const skyboxDn = skyboxTextures.dn;
+		const skyboxFt = skyboxTextures.ft;
+		const skyboxBk = skyboxTextures.bk;
+		const skyboxLf = skyboxTextures.lf;
+		const skyboxRt = skyboxTextures.rt;
 		
 		skyboxTexture = gl.createTexture();
 		gl.bindTexture(gl.TEXTURE_CUBE_MAP, skyboxTexture);

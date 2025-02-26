@@ -1,4 +1,4 @@
-var fragmentShader = `#version 300 es
+#version 300 es
 
 precision mediump float;
 
@@ -58,4 +58,3 @@ void main(void){
 	//fragColor = vec4(normalize(vec3(perspective*view*vec4(normal, 1.0))), 1.0);
 	
 }
-`;

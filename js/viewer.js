@@ -16,7 +16,9 @@ canvas.height = size;
 context.strokeStyle = "#0f0";
 context.fillStyle = "#fff";*/
 
-const gl = new Renderer("renderCanvas");
+let gl;
+let vertexShader = "";
+let fragmentShader = "";
 
 let glb = {};
 let buffers = [];
@@ -29,6 +31,91 @@ let textures = [];
 let angle = 0;
 let scale = 0.5;
 let offsetY = 0;
+
+let outstandingImageCount = 0;
+
+let outstandingResourceCount = 0;
+
+let skyboxTextures = {
+	up: null,
+	dn: null,
+	ft: null,
+	bk: null,
+	lf: null,
+	rt: null
+};
+
+loadResources();
+
+function initIfResourcesAreLoaded(){
+	if(outstandingResourceCount === 0){
+		
+		gl = new Renderer("renderCanvas");
+		gl.loadSkybox(skyboxTextures);
+		
+	}
+};
+
+function loadFile(url, callback){
+    var request = new XMLHttpRequest();
+    request.overrideMimeType("text/plain");
+    request.open('GET', url, true);
+
+    request.onreadystatechange = function (){
+        if (request.readyState == 4){
+            if (request.status == 200){
+                callback(request.responseText);
+            } else {
+				console.error("File is sad ("+request.status+"): "+url);
+            }
+        }
+    };
+
+    request.send();
+}
+
+function loadResources(){
+	
+	outstandingResourceCount += 6; // skybox images
+	outstandingResourceCount += 2; // shaders
+	
+	// load shaders
+	
+	loadFile("js/shaders/vertex.glsl", function(responseText){
+		vertexShader = responseText;
+		outstandingResourceCount--;
+		initIfResourcesAreLoaded();
+	});
+	
+	loadFile("js/shaders/fragment.glsl", function(responseText){
+		fragmentShader = responseText;
+		outstandingResourceCount--;
+		initIfResourcesAreLoaded();
+	});
+	
+	// load skybox textures
+	for(let img in skyboxTextures){
+		skyboxTextures[img] = document.createElement("img");
+		skyboxTextures[img].onload = function(){
+			outstandingResourceCount--;
+			initIfResourcesAreLoaded();
+		};
+	}
+	
+	skyboxTextures.up.id = "skybox-up";
+	skyboxTextures.dn.id = "skybox-dn";
+	skyboxTextures.ft.id = "skybox-ft";
+	skyboxTextures.bk.id = "skybox-bk";
+	skyboxTextures.lf.id = "skybox-lf";
+	skyboxTextures.rt.id = "skybox-rt";
+	
+	skyboxTextures.up.src = "skybox/skybox-up.jpg";
+	skyboxTextures.dn.src = "skybox/skybox-dn.jpg";
+	skyboxTextures.ft.src = "skybox/skybox-ft.jpg";
+	skyboxTextures.bk.src = "skybox/skybox-bk.jpg";
+	skyboxTextures.lf.src = "skybox/skybox-lf.jpg";
+	skyboxTextures.rt.src = "skybox/skybox-rt.jpg";
+}
 
 scaleInput.oninput = function(e){
 	scale = parseFloat(scaleInput.value);
@@ -114,11 +201,15 @@ function processFile(file){
 	processBuffers();
 	processBufferViews();
 	processImages();
-	setTimeout(finishProcessing, 1000); // TODO: anything but this
+}
+
+function finishProcessingIfFilesAreLoaded(){
+	if(outstandingImageCount === 0){
+		finishProcessing();
+	}
 }
 
 function finishProcessing(){
-	gl.loadSkybox();
 	processTextures();
 	processMaterials();
 	processMeshes();
@@ -199,12 +290,21 @@ function processImages(){
 			let imageUrl = URL.createObjectURL(imageData);
 			let imgEl = new Image;
 			imagesContainer.appendChild(imgEl);
+			
+			outstandingImageCount++;
+			imgEl.onload = function(){
+				outstandingImageCount--;
+				finishProcessingIfFilesAreLoaded();
+			}
+			
 			imgEl.src = imageUrl;
 			img.image = imgEl;
 			
 			images[i] = imgEl;
 			//console.log(imgEl);
 		}
+	} else {
+		finishProcessingIfFilesAreLoaded();
 	}
 }
 
