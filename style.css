@@ -68,7 +68,7 @@ body{
 	position: absolute;
 }
 
-#scaleInput, #offsetYInput{
+#cameraZInput, #offsetYInput{
 	position: absolute;
 	width: 100%;
 	top: 30px;

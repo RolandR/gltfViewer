@@ -1,31 +1,35 @@
 
 function Renderer(canvasId){
 
-	var canvas = document.getElementById(canvasId);
-
+	const canvas = document.getElementById(canvasId);
+	
 	canvas.width = document.getElementById("canvasContainer").clientWidth;
 	canvas.height = document.getElementById("canvasContainer").clientHeight;
 	
-	var gl = canvas.getContext("webgl2", {premultipliedAlpha: false});
+	const gl = canvas.getContext("webgl2", {premultipliedAlpha: false, preserveDrawingBuffer: false});
 
-	var shaderProgram;
-	var size;
+	let shaderProgram;
+	let skyboxShaderProgram;
 	
-	var scene = null;
-	var meshes = [];
-	var materials = [];
-	var textures = [];
+	let size;
 	
-	var transparentPrimitives = [];
+	let scene = null;
+	const meshes = [];
+	const materials = [];
+	const textures = [];
+	
+	let transparentPrimitives = [];
 
-	var transformMatrixRef;
-	var normalTransformRef;
-	var aspectRef;
-	var colorRef;
+	let transformMatrixRef;
+	let normalTransformRef;
+	let aspectRef;
+	let colorRef;
+	let cameraZRef;
 	
-	var samplerRef;
-	var normalSamplerRef;
-	var skyboxSamplerRef;
+	let samplerRef;
+	let normalSamplerRef;
+	let skyboxSamplerRef;
+	let skyboxVertexBuffer;
 	
 	let skyboxTexture;
 	
@@ -33,49 +37,30 @@ function Renderer(canvasId){
 
 	function init(){
 
-		gl.enable(gl.DEPTH_TEST);
+		//gl.enable(gl.DEPTH_TEST);
 
 		//gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
 		//gl.enable(gl.BLEND);
 
 		/*=========================Shaders========================*/
 
-		// Create a vertex shader object
-		var vertShader = gl.createShader(gl.VERTEX_SHADER);
-
-		// Attach vertex shader source code
-		gl.shaderSource(vertShader, vertexShader);
-
-		// Compile the vertex shader
-		gl.compileShader(vertShader);
-
-		// Create fragment shader object
-		var fragShader = gl.createShader(gl.FRAGMENT_SHADER);
-
-		// Attach fragment shader source code
-		gl.shaderSource(fragShader, fragmentShader);
-
-		// Compile the fragmentt shader
-		gl.compileShader(fragShader);
-
-		// Create a shader program object to store
-		// the combined shader program
-		shaderProgram = gl.createProgram();
-
-		// Attach a vertex shader
-		gl.attachShader(shaderProgram, vertShader); 
-
-		// Attach a fragment shader
-		gl.attachShader(shaderProgram, fragShader);
-
-		// Link both programs
-		gl.linkProgram(shaderProgram);
-
-		// Use the combined shader program object
-		gl.useProgram(shaderProgram);
+		let vertexShader = gl.createShader(gl.VERTEX_SHADER);
+		gl.shaderSource(vertexShader, shaderTexts["vertexShader"]);
+		gl.compileShader(vertexShader);
 		
-		var vertInfo = gl.getShaderInfoLog(vertShader);
-		var fragInfo = gl.getShaderInfoLog(fragShader);
+		let fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
+		gl.shaderSource(fragmentShader, shaderTexts["fragmentShader"]);
+		gl.compileShader(fragmentShader);
+		
+		shaderProgram = gl.createProgram();
+		gl.attachShader(shaderProgram, vertexShader); 
+		gl.attachShader(shaderProgram, fragmentShader);
+		
+		gl.linkProgram(shaderProgram);
+		//gl.useProgram(shaderProgram);
+		
+		var vertInfo = gl.getShaderInfoLog(vertexShader);
+		var fragInfo = gl.getShaderInfoLog(fragmentShader);
 		var programInfo = gl.getProgramInfoLog(shaderProgram);
 
 		if(vertInfo){
@@ -87,7 +72,7 @@ function Renderer(canvasId){
 		if(programInfo){
 			console.info(programInfo);
 		}
-
+		
 		maxDistanceRef = gl.getUniformLocation(shaderProgram, "maxDistance");
 		modelRef = gl.getUniformLocation(shaderProgram, "model");
 		viewRef = gl.getUniformLocation(shaderProgram, "view");
@@ -95,12 +80,49 @@ function Renderer(canvasId){
 		normalTransformRef = gl.getUniformLocation(shaderProgram, "normalTransform");
 		aspectRef = gl.getUniformLocation(shaderProgram, "aspect");
 		colorRef = gl.getUniformLocation(shaderProgram, "color");
+		cameraZRef = gl.getUniformLocation(shaderProgram, "cameraZ");
 		emissiveRef = gl.getUniformLocation(shaderProgram, "emissive");
 		shinyRef = gl.getUniformLocation(shaderProgram, "shiny");
 		samplerRef = gl.getUniformLocation(shaderProgram, "uSampler");
 		normalSamplerRef = gl.getUniformLocation(shaderProgram, "uNormalSampler");
 		skyboxSamplerRef = gl.getUniformLocation(shaderProgram, "uSkyboxSampler");
 		
+		/*   Skybox shader   */
+		
+		let skyboxVertexShader = gl.createShader(gl.VERTEX_SHADER);
+		gl.shaderSource(skyboxVertexShader, shaderTexts["skyboxVertexShader"]);
+		gl.compileShader(skyboxVertexShader);
+		
+		let skyboxFragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
+		gl.shaderSource(skyboxFragmentShader, shaderTexts["skyboxFragmentShader"]);
+		gl.compileShader(skyboxFragmentShader);
+		
+		skyboxShaderProgram = gl.createProgram();
+		gl.attachShader(skyboxShaderProgram, skyboxVertexShader); 
+		gl.attachShader(skyboxShaderProgram, skyboxFragmentShader);
+		
+		gl.linkProgram(skyboxShaderProgram);
+		
+		skyboxSkyboxSamplerRef = gl.getUniformLocation(skyboxShaderProgram, "uSkyboxSampler");
+		skyboxAspectRef = gl.getUniformLocation(skyboxShaderProgram, "aspect");
+		skyboxViewRef = gl.getUniformLocation(skyboxShaderProgram, "view");
+		
+		let skyboxVertices = new Float32Array([
+			-1.0, -1.0,
+			 1.0, -1.0,
+			-1.0,  1.0,
+			
+			-1.0,  1.0,
+			 1.0, -1.0,
+			 1.0,  1.0
+		]);
+		
+		skyboxVertexBuffer = gl.createBuffer();
+		gl.bindBuffer(gl.ARRAY_BUFFER, skyboxVertexBuffer);
+		gl.bufferData(gl.ARRAY_BUFFER, skyboxVertices, gl.STATIC_DRAW);
+		let coord = gl.getAttribLocation(skyboxShaderProgram, "coordinates");
+		gl.vertexAttribPointer(coord, 2, gl.FLOAT, false, 0, 0);
+		gl.enableVertexAttribArray(coord);
 	}
 	
 	function loadSkybox(skyboxTextures){
@@ -223,41 +245,29 @@ function Renderer(canvasId){
 	
 	function render(model, view, perspective){
 
-		/*if(!interpolation){
-			interpolation = 0;
-		}
-
-		var identityMatrix = [
-			1, 0, 0, 0,
-			0, 1, 0, 0,
-			0, 0, 1, 0,
-			0, 0, 0, 1
-		];*/
-
-		//console.table(transforms);
-
-		/*for(var i in transformMatrix){
-			transformMatrix[i] = transformMatrix[i] * (1-interpolation) + identityMatrix[i] * interpolation;
-		}*/
+		// Clear the canvas
+		//gl.clearColor(1, 1, 1, 1);
 		
-		//var normalsMatrix = normalMatrix(model);
+		//gl.viewport(0, 0, canvas.width, canvas.height);
 
+		gl.clear(gl.COLOR_BUFFER_BIT);
+		gl.clear(gl.DEPTH_BUFFER_BIT);
+		
+		gl.disable(gl.DEPTH_TEST);
+		gl.disable(gl.BLEND);
+		
+		renderSkybox(model, view, perspective);
+		
+		gl.enable(gl.DEPTH_TEST);
+		
+		gl.useProgram(shaderProgram);
+		
 		gl.uniform1f(maxDistanceRef, 8.0);
 		
 		gl.uniformMatrix4fv(viewRef, false, view);
 		gl.uniformMatrix4fv(perspectiveRef, false, perspective);
-		//gl.uniformMatrix3fv(normalTransformRef, false, normalsMatrix);
 		gl.uniform1f(aspectRef, canvas.width/canvas.height);
-
-		// Clear the canvas
-		gl.clearColor(1, 1, 1, 1);
-		
-		gl.viewport(0, 0, canvas.width, canvas.height);
-
-		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-		
-		//gl.enable(gl.DEPTH_TEST);
-		gl.disable(gl.BLEND);
+		gl.uniform1f(cameraZRef, cameraZ);
 		
 		for(let n in scene.nodes){
 			renderNode(scene.nodes[n], model);
@@ -267,6 +277,23 @@ function Renderer(canvasId){
 		gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 		
 		renderTransparentPrimitives();
+	}
+	
+	function renderSkybox(model, view, perspective){
+		gl.useProgram(skyboxShaderProgram);
+		gl.uniformMatrix4fv(skyboxViewRef, false, view);
+		gl.uniform1f(skyboxAspectRef, canvas.width/canvas.height);
+		
+		gl.activeTexture(gl.TEXTURE1);
+		gl.bindTexture(gl.TEXTURE_CUBE_MAP, skyboxTexture);
+		gl.uniform1i(skyboxSkyboxSamplerRef, 1);
+		
+		gl.bindBuffer(gl.ARRAY_BUFFER, skyboxVertexBuffer);
+		let coord = gl.getAttribLocation(skyboxShaderProgram, "coordinates");
+		gl.vertexAttribPointer(coord, 2, gl.FLOAT, false, 0, 0);
+		gl.enableVertexAttribArray(coord);
+		
+		gl.drawArrays(gl.TRIANGLES, 0, 2*3);
 	}
 	
 	function renderNode(node, transform){

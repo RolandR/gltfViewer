@@ -19,12 +19,13 @@ out vec4 coord;
 
 void main(void){
 	
-	normal = normalize(normalTransform * vec4(vertexNormal, 1.0)).xyz;
+	normal = normalize(normalTransform * vec4(vertexNormal, 0.0)).xyz;
 	vTexCoord = texCoord;
 	
 	vec4 coords = vec4(coordinates, 1.0);
 
 	coords = perspective * view * model * coords;
+	//coords.w = (coords.z+1.0)/2.0;
 	
 	fogness = clamp(length(coords)/maxDistance, 0.0, 1.0);
 	

@@ -1,6 +1,6 @@
 
 const fileInput = document.getElementById("fileUpload");
-const scaleInput = document.getElementById("scaleInput");
+const cameraZInput = document.getElementById("cameraZInput");
 const offsetYInput = document.getElementById("offsetYInput");
 const imagesContainer = document.getElementById("imagesContainer");
 
@@ -17,8 +17,7 @@ context.strokeStyle = "#0f0";
 context.fillStyle = "#fff";*/
 
 let gl;
-let vertexShader = "";
-let fragmentShader = "";
+let shaderTexts = {};
 
 let glb = {};
 let buffers = [];
@@ -31,6 +30,7 @@ let textures = [];
 let angle = 0;
 let scale = 0.5;
 let offsetY = 0;
+let cameraZ = 1;
 
 let outstandingImageCount = 0;
 
@@ -44,6 +44,16 @@ let skyboxTextures = {
 	lf: null,
 	rt: null
 };
+
+let position = [0, 0, -1];
+let rotationX = 0;
+let rotationY = 0;
+let currentRotationX = 0;
+let currentRotationY = 0;
+
+let mouseDown = false;
+let startX = 0;
+let startY = 0;
 
 loadResources();
 
@@ -76,22 +86,25 @@ function loadFile(url, callback){
 
 function loadResources(){
 	
+	let shaderSources = [
+		["vertexShader", "js/shaders/vertex.glsl"],
+		["fragmentShader", "js/shaders/fragment.glsl"],
+		["skyboxVertexShader", "js/shaders/skyboxVertex.glsl"],
+		["skyboxFragmentShader", "js/shaders/skyboxFragment.glsl"],
+	];
+	
 	outstandingResourceCount += 6; // skybox images
-	outstandingResourceCount += 2; // shaders
+	outstandingResourceCount += shaderSources.length; // shaders
 	
 	// load shaders
 	
-	loadFile("js/shaders/vertex.glsl", function(responseText){
-		vertexShader = responseText;
-		outstandingResourceCount--;
-		initIfResourcesAreLoaded();
-	});
-	
-	loadFile("js/shaders/fragment.glsl", function(responseText){
-		fragmentShader = responseText;
-		outstandingResourceCount--;
-		initIfResourcesAreLoaded();
-	});
+	for(let i in shaderSources){
+		loadFile(shaderSources[i][1], function(responseText){
+			shaderTexts[shaderSources[i][0]] = responseText;
+			outstandingResourceCount--;
+			initIfResourcesAreLoaded();
+		});
+	}
 	
 	// load skybox textures
 	for(let img in skyboxTextures){
@@ -117,13 +130,52 @@ function loadResources(){
 	skyboxTextures.rt.src = "skybox/skybox-rt.jpg";
 }
 
-scaleInput.oninput = function(e){
-	scale = parseFloat(scaleInput.value);
+cameraZInput.oninput = function(e){
+	cameraZ = parseFloat(cameraZInput.value);
 }
 
 offsetYInput.oninput = function(e){
 	offsetY = parseFloat(offsetYInput.value);
 }
+
+canvas.addEventListener("mousedown", function(e){
+	startX = e.clientX;
+	startY = e.clientY;
+	mouseDown = true;
+	e.preventDefault();
+});
+
+window.addEventListener("mousemove", function(e){
+	if(mouseDown){
+		var deltaX = startX-e.clientX;
+		var deltaY = startY-e.clientY;
+
+		currentRotationY = deltaX/100;
+		currentRotationX = deltaY/100;
+		
+		//update();
+		
+		//e.preventDefault();
+	}
+});
+
+window.addEventListener("mouseup", function(e){
+	mouseDown = false;
+	rotationX += currentRotationX;
+	rotationY += currentRotationY;
+	
+	currentRotationX = 0;
+	currentRotationY = 0;
+	
+	//e.preventDefault();
+});
+
+canvas.addEventListener('wheel', function(e) {
+	
+	scale -= scale * 0.001 * e.deltaY;
+	
+	e.preventDefault();
+});
 
 fileInput.onchange = function(e){
 	e.preventDefault();
@@ -495,14 +547,6 @@ function render(){
 		0, 0, 0, 1
 	];
 	
-	let a = angle;
-	let rotateTransform = [
-		 Math.cos(a),   0, Math.sin(a),   0,
-			  0,   1,      0,   0,
-		-Math.sin(a),   0, Math.cos(a),   0,
-			  0,   0,      -1,   1
-	];
-	
 	let scaleTransform = [
 		scale, 0, 0, 0,
 		0, scale, 0, 0,
@@ -517,17 +561,50 @@ function render(){
 		0, offsetY, 0, 1
 	];
 	
-	let viewTransform = multiplyArrayOfMatrices([
+	modelTransform = multiplyArrayOfMatrices([
+		modelTransform,
+		scaleTransform,
+		offsetTransform
+		//rotateTransform
+	]);
+	
+	let viewTransforms = [
 		[
 			1, 0, 0, 0,
 			0, 1, 0, 0,
 			0, 0, 1, 0,
 			0, 0, 0, 1
-		],
-		scaleTransform,
-		offsetTransform,
-		rotateTransform
+		]
+	];
+	
+	let sin = Math.sin;
+	let cos = Math.cos;
+	let a;
+	
+	a = rotationY + currentRotationY;
+	viewTransforms.push([
+		 cos(a),   0, sin(a),   0,
+			  0,   1,      0,   0,
+		-sin(a),   0, cos(a),   0,
+		      0,   0,      0,   1
 	]);
+	
+	a = rotationX + currentRotationX;
+	viewTransforms.push([
+		1,       0,        0,     0,
+		0,  cos(a),  sin(a),     0,
+		0,  -sin(a),   cos(a),     0,
+		0,       0,        0,     1
+	]);
+	
+	viewTransforms.push([
+		1, 0, 0, 0,
+		0, 1, 0, 0,
+		0, 0, 1, 0,
+		position[0], position[1], position[2], 1
+	]);
+	
+	viewTransform = multiplyArrayOfMatrices(viewTransforms);
 
 	let perspectiveTransform = [
 		f / aspectRatio, 0,                          0,   0,
@@ -573,7 +650,7 @@ function renderScene(scene){
 		renderNode(scene.nodes[n], transform);
 	}
 	
-	angle += 0.01;
+	//angle += 0.01;
 }
 
 function renderNode(node, transform){

@@ -13,6 +13,7 @@ in float fogness;
 
 uniform lowp float shiny;
 uniform lowp float emissive;
+uniform lowp float cameraZ;
 
 uniform sampler2D uSampler;
 uniform samplerCube uSkyboxSampler;
@@ -32,20 +33,40 @@ void main(void){
     highp vec3 directionalLightColor = vec3(1.0, 1.0, 0.9);
 	highp vec4 directionalVec4 = normalize(vec4(0.0, 1.0, 1.0, 1.0));
     highp vec3 directionalVector = normalize(directionalVec4).xyz;
-    highp vec3 localNormal = normalize(inverse(transpose(mat3(view))) * normalize(normal));
-    highp vec3 reflectNormal = normalize(vec4(normal, 1.0)).xyz;
+    highp vec3 localNormal = normalize(inverse(transpose(mat3(view))) * normal);
     
-    highp vec4 viewDirection = normalize(coord-vec4(0.0, 0.0, 2.0, 1.0));
-    //viewDirection = -perspective*view*viewDirection;
+    highp mat3 normalizedView = inverse(transpose(mat3(view)));
     
-    vec4 texColor = texture(uSkyboxSampler, normalize(reflect(viewDirection.xyz, localNormal)));
+    highp vec4 cameraLocation = vec4(0.0, 0.0, cameraZ, 1.0);
+    
+    //cameraLocation.z = cameraLocation.z + 1.0;
+    
+    highp vec4 localCamera = cameraLocation;
+    
+    vec4 localCoord = coord;
+    localCoord.z = -1.0;
+    
+    highp vec4 viewDirection = normalize(localCoord-cameraLocation);
+    
+    vec3 vd = normalize(inverse(view)*viewDirection).xyz;
+    
+    //highp vec3 localViewDirection = normalize(inverse(transpose(mat3(view)))*viewDirection.xyz);
+    
+    highp vec3 reflectedDirection = normalize(reflect(vd, normal));
+    //reflectedDirection = normalize(inverse(transpose(mat3(view)))*reflectedDirection);
+    
+    vec4 skybox = texture(uSkyboxSampler, vd);
+    //vec4 skybox = texture(uSkyboxSampler, reflectedDirection);
+    
     //vec4 texColor = texture(uSkyboxSampler, normal);
 
 	//highp float directional = clamp(dot(directionalVector, localNormal), 0.0, 1.0);
 	
     //lighting = ambientLight * 1.0 + (directionalLightColor * directional * 1.0);
 
-	//vec4 texColor = texture(uSampler, vTexCoord);
+	vec4 texColor = texture(uSampler, vTexCoord);
+	
+	texColor.rgb = mix(skybox.rgb, texColor.rgb, 0.1);
 
 	//vec3 fColor = texColor.rgb * max(lighting, emissive);
 	//fColor = mix(fColor, fogColor, fogness);
