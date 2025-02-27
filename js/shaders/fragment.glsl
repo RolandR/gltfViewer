@@ -11,7 +11,8 @@ uniform highp mat4 normalTransform;
 
 in float fogness;
 
-uniform lowp float shiny;
+uniform lowp float roughness;
+uniform lowp float metallic;
 uniform lowp float emissive;
 uniform lowp float cameraZ;
 
@@ -50,7 +51,7 @@ void main(void){
     
     highp vec3 reflectedDirection = normalize(reflect(vd, normal));
     
-    vec4 skybox = texture(uSkyboxSampler, reflectedDirection);
+    vec4 skybox = textureLod(uSkyboxSampler, reflectedDirection, mix(1.0, 8.0, roughness));
     
     vec4 ambient = textureLod(uSkyboxSampler, normal, 8.0);
 
@@ -58,9 +59,10 @@ void main(void){
 	
     //lighting = ambientLight * 1.0 + (directionalLightColor * directional * 1.0);
 
-	vec4 texColor = texture(uSampler, vTexCoord);
+	//vec4 texColor = texture(uSampler, vTexCoord);
+	vec4 texColor = color;
 	
-	texColor = texColor*ambient + directional*directionalLightColor*texColor*1.0;
+	texColor = mix(texColor*ambient + directional*directionalLightColor*texColor*1.0, skybox, metallic);
 	
 	//texColor.rgb = mix(skybox.rgb, texColor.rgb, 0.1);
 
@@ -69,6 +71,6 @@ void main(void){
 	
 	
 	//fragColor = vec4(texColor.xyz, texColor.a);
-	fragColor = vec4(texColor.rgb, texColor.a);
+	fragColor = vec4(texColor.rgb, color.a);
 	
 }

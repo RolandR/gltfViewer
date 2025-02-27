@@ -1,3 +1,15 @@
+
+function multiplyMatrixByVector(m, v){
+	
+	return [
+		v[0]*m[0   ] + v[1]*m[1   ] + v[2]*m[2   ] + v[3]*m[3   ],
+		v[0]*m[0+4 ] + v[1]*m[1+4 ] + v[2]*m[2+4 ] + v[3]*m[3+4 ],
+		v[0]*m[0+8 ] + v[1]*m[1+8 ] + v[2]*m[2+8 ] + v[3]*m[3+8 ],
+		v[0]*m[0+12] + v[1]*m[1+12] + v[2]*m[2+12] + v[3]*m[3+12],
+	];
+	
+}
+
 function multiplyMatrices(a, b){
 
 	var result = [];

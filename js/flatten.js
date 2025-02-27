@@ -1,23 +1,8 @@
 
 const fileInput = document.getElementById("fileUpload");
-const cameraZInput = document.getElementById("cameraZInput");
-const offsetYInput = document.getElementById("offsetYInput");
 const imagesContainer = document.getElementById("imagesContainer");
 
-const canvasContainer = document.getElementById("canvasContainer");
-const canvas = document.getElementById("renderCanvas");
-
-const defaultTexture = document.getElementById("defaultTexture");
-
-/*const context = canvas.getContext("2d");
-const size = Math.min(canvasContainer.clientWidth, canvasContainer.clientHeight);
-canvas.width = size;
-canvas.height = size;
-context.strokeStyle = "#0f0";
-context.fillStyle = "#fff";*/
-
-let gl;
-let shaderTexts = {};
+const structureContainer = document.getElementById("structureContainer");
 
 let glb = {};
 let buffers = [];
@@ -26,45 +11,11 @@ let nodes = [];
 let materials = [];
 let images = [];
 let textures = [];
+let meshes = [];
 
-let angle = 0;
-let scale = 0.5;
-let offsetY = 0;
-let cameraZ = 1.8;
+let flatMeshes = [];
 
 let outstandingImageCount = 0;
-
-let outstandingResourceCount = 0;
-
-let skyboxTextures = {
-	up: null,
-	dn: null,
-	ft: null,
-	bk: null,
-	lf: null,
-	rt: null
-};
-
-let position = [0, 0, -1];
-let rotationX = 0;
-let rotationY = 0;
-let currentRotationX = 0;
-let currentRotationY = 0;
-
-let mouseDown = false;
-let startX = 0;
-let startY = 0;
-
-loadResources();
-
-function initIfResourcesAreLoaded(){
-	if(outstandingResourceCount === 0){
-		
-		gl = new Renderer("renderCanvas");
-		gl.loadSkybox(skyboxTextures);
-		
-	}
-};
 
 function loadFile(url, callback){
     var request = new XMLHttpRequest();
@@ -83,99 +34,6 @@ function loadFile(url, callback){
 
     request.send();
 }
-
-function loadResources(){
-	
-	let shaderSources = [
-		["vertexShader", "js/shaders/vertex.glsl"],
-		["fragmentShader", "js/shaders/fragment.glsl"],
-		["skyboxVertexShader", "js/shaders/skyboxVertex.glsl"],
-		["skyboxFragmentShader", "js/shaders/skyboxFragment.glsl"],
-	];
-	
-	outstandingResourceCount += 6; // skybox images
-	outstandingResourceCount += shaderSources.length; // shaders
-	
-	// load shaders
-	
-	for(let i in shaderSources){
-		loadFile(shaderSources[i][1], function(responseText){
-			shaderTexts[shaderSources[i][0]] = responseText;
-			outstandingResourceCount--;
-			initIfResourcesAreLoaded();
-		});
-	}
-	
-	// load skybox textures
-	for(let img in skyboxTextures){
-		skyboxTextures[img] = document.createElement("img");
-		skyboxTextures[img].onload = function(){
-			outstandingResourceCount--;
-			initIfResourcesAreLoaded();
-		};
-	}
-	
-	skyboxTextures.up.id = "skybox-up";
-	skyboxTextures.dn.id = "skybox-dn";
-	skyboxTextures.ft.id = "skybox-ft";
-	skyboxTextures.bk.id = "skybox-bk";
-	skyboxTextures.lf.id = "skybox-lf";
-	skyboxTextures.rt.id = "skybox-rt";
-	
-	skyboxTextures.up.src = "skybox/skybox-up.jpg";
-	skyboxTextures.dn.src = "skybox/skybox-dn.jpg";
-	skyboxTextures.ft.src = "skybox/skybox-ft.jpg";
-	skyboxTextures.bk.src = "skybox/skybox-bk.jpg";
-	skyboxTextures.lf.src = "skybox/skybox-lf.jpg";
-	skyboxTextures.rt.src = "skybox/skybox-rt.jpg";
-}
-
-cameraZInput.oninput = function(e){
-	cameraZ = parseFloat(cameraZInput.value);
-}
-
-offsetYInput.oninput = function(e){
-	offsetY = parseFloat(offsetYInput.value);
-}
-
-canvas.addEventListener("mousedown", function(e){
-	startX = e.clientX;
-	startY = e.clientY;
-	mouseDown = true;
-	e.preventDefault();
-});
-
-window.addEventListener("mousemove", function(e){
-	if(mouseDown){
-		var deltaX = startX-e.clientX;
-		var deltaY = startY-e.clientY;
-
-		currentRotationY = deltaX/100;
-		currentRotationX = deltaY/100;
-		
-		//update();
-		
-		//e.preventDefault();
-	}
-});
-
-window.addEventListener("mouseup", function(e){
-	mouseDown = false;
-	rotationX += currentRotationX;
-	rotationY += currentRotationY;
-	
-	currentRotationX = 0;
-	currentRotationY = 0;
-	
-	//e.preventDefault();
-});
-
-canvas.addEventListener('wheel', function(e) {
-	
-	scale -= scale * 0.001 * e.deltaY;
-	
-	e.preventDefault();
-});
 
 fileInput.onchange = function(e){
 	e.preventDefault();
@@ -207,42 +65,61 @@ fileInput.onchange = function(e){
 		
 		loadedFile = reader.result;
 		
-		setTimeout(function(){processFile(loadedFile);}, 200);
+		setTimeout(function(){processFile(file, loadedFile);}, 200);
 	}
 	
 	setTimeout(function(){reader.readAsArrayBuffer(file);}, 100);
 }
 
-function processFile(file){
+function processFile(file, fileData){
 	console.log(file);
-	let view = new DataView(file);
+	let view = new DataView(fileData);
 	const decoder = new TextDecoder();
 	let json = {};
 	
-	const magic = file.slice(0, 4);
+	const magic = fileData.slice(0, 4);
 	console.log("Magic bytes: " + decoder.decode(magic));
 	console.log("Version: " + view.getUint32(1*4, true));
 	console.log("File length: " + view.getUint32(2*4, true));
+	
+	let fileInfo = document.createElement("div");
+	fileInfo.className = "info fileInfo";
+	fileInfo.innerHTML = "<h2>" + file.name + "</h2>";
+	fileInfo.innerHTML += "File length: " + view.getUint32(2*4, true) + "<br>";
+	fileInfo.innerHTML += "Magic bytes: " + decoder.decode(magic) + "<br>";
+	fileInfo.innerHTML += "Version: " + view.getUint32(1*4, true);
+	
+	structureContainer.appendChild(fileInfo);
+	
+	
 	
 	let jsonText = "";
 	
 	let i = 3*4;
 	while(i < view.byteLength){
 		let chunkLength = view.getUint32(i, true);
-		let chunkType = decoder.decode(file.slice(i+4, i+8));
+		let chunkType = decoder.decode(fileData.slice(i+4, i+8));
 		console.log("chunkData length: " + chunkLength);
 		console.log("Chunk type: " + chunkType);
 		
+		let chunkInfo = document.createElement("div");
+		chunkInfo.className = "info chunkInfo";
+		chunkInfo.innerHTML = "Chunk type: " + chunkType + "<br>";
+		chunkInfo.innerHTML += "chunkData length: " + chunkLength;
+		
+		structureContainer.appendChild(chunkInfo);
+		
 		if(chunkType.toLowerCase() == "json"){
-			jsonText = decoder.decode(file.slice(i+8, i+8+chunkLength));
+			jsonText = decoder.decode(fileData.slice(i+8, i+8+chunkLength));
 		} else {
-			buffers.push(file.slice(i+8, i+8+chunkLength));
+			buffers.push(fileData.slice(i+8, i+8+chunkLength));
 		}
 		
 		i += 8+chunkLength;
 	}
 	
 	if(jsonText){
+		//console.log(jsonText);
 		glb = JSON.parse(jsonText);
 		console.log(glb);
 	} else {
@@ -266,7 +143,11 @@ function finishProcessing(){
 	processMaterials();
 	processMeshes();
 	processScenes();
-	render();
+	
+	flattenMeshes();
+	console.log(flatMeshes);
+	
+	buildNewFile();
 	
 	setTimeout(function(){
 		loadingStatus.className = "fading";
@@ -276,14 +157,249 @@ function finishProcessing(){
 	}, 100);
 }
 
+function buildNewFile(){
+	let json = {
+		asset: {
+			generator: "Roland's GLTF converter thingy!",
+			version: "2.0"
+		},
+		scene: 0,
+		scenes: [],
+		nodes: [],
+		materials: [],
+		meshes: [],
+		accessors: [],
+		bufferViews: [],
+		buffers: []
+	}
+	
+	let bufferViews = [];
+	let offset = 0;
+	
+	json.scenes[0] = {
+		name: scenes[0].name,
+		nodes: []
+	}
+	
+	for(let i in flatMeshes){
+		
+		json.nodes.push({
+			name: flatMeshes[i].nodeName,
+			mesh: i*1
+		});
+		json.scenes[0].nodes.push(json.nodes.length-1); // TODO: use actual node structure
+		
+		let mesh = flatMeshes[i];
+		
+		let outMesh = {
+			name: mesh.name,
+			primitives: []
+		};
+		
+		
+		
+		for(let p in mesh.primitives){
+			
+			outMesh.primitives[p] = {
+				attributes: {}
+			};
+			
+			let pointer;
+			
+			/*======== indices ========*/
+			bufferViews.push(mesh.primitives[p].indices);
+			pointer = bufferViews.length - 1;
+			
+			json.bufferViews.push({
+				buffer: 0,
+				byteLength: bufferViews[pointer].byteLength,
+				byteOffset: offset,
+				target: 34963 // indices (ELEMENT_ARRAY_BUFFER)
+			});
+			offset += bufferViews[pointer].byteLength;
+			
+			json.accessors.push({
+				bufferView: pointer,
+				byteOffset: 0,
+				type: "SCALAR",
+				componentType: 5123,
+				count: mesh.primitives[p].indices.length
+			});
+			outMesh.primitives[pointer].indices = pointer;
+			
+			/*======== positions ========*/
+			bufferViews.push(mesh.primitives[p].positions);
+			pointer = bufferViews.length - 1;
+			
+			json.bufferViews.push({
+				buffer: 0,
+				byteLength: bufferViews[pointer].byteLength,
+				byteOffset: offset,
+				target: 34962 // positions (ARRAY_BUFFER)
+			});
+			offset += bufferViews[pointer].byteLength;
+			
+			let min = [
+				mesh.primitives[p].positions[0],
+				mesh.primitives[p].positions[1],
+				mesh.primitives[p].positions[2],
+			];
+			let max = [
+				mesh.primitives[p].positions[0],
+				mesh.primitives[p].positions[1],
+				mesh.primitives[p].positions[2],
+			];
+			
+			for(let i = 0; i < mesh.primitives[p].positions.length; i += 3){
+				min[0] = Math.min(mesh.primitives[p].positions[i+0], min[0]);
+				max[0] = Math.max(mesh.primitives[p].positions[i+0], max[0]);
+				
+				min[1] = Math.min(mesh.primitives[p].positions[i+1], min[1]);
+				max[1] = Math.max(mesh.primitives[p].positions[i+1], max[1]);
+				
+				min[2] = Math.min(mesh.primitives[p].positions[i+2], min[2]);
+				max[2] = Math.max(mesh.primitives[p].positions[i+2], max[2]);
+			}
+			
+			json.accessors.push({
+				bufferView: pointer,
+				byteOffset: 0,
+				type: "VEC3",
+				componentType: 5126,
+				count: mesh.primitives[p].positions.length/3,
+				min: min,
+				max: max
+			});
+			outMesh.primitives[p].attributes.POSITION = pointer;
+			
+			/*======== normals ========*/
+			bufferViews.push(mesh.primitives[p].normals);
+			pointer = bufferViews.length - 1;
+			
+			json.bufferViews.push({
+				buffer: 0,
+				byteLength: bufferViews[pointer].byteLength,
+				byteOffset: offset,
+				target: 34962 // positions (ARRAY_BUFFER)
+			});
+			offset += bufferViews[pointer].byteLength;
+			
+			json.accessors.push({
+				bufferView: pointer,
+				byteOffset: 0,
+				type: "VEC3",
+				componentType: 5126,
+				count: mesh.primitives[p].normals.length/3
+			});
+			outMesh.primitives[p].attributes.NORMAL = pointer;
+			
+			/*======== texCoords ========*/
+			bufferViews.push(mesh.primitives[p].texCoords);
+			pointer = bufferViews.length - 1;
+			
+			json.bufferViews.push({
+				buffer: 0,
+				byteLength: bufferViews[pointer].byteLength,
+				byteOffset: offset,
+				target: 34962 // positions (ARRAY_BUFFER)
+			});
+			offset += bufferViews[pointer].byteLength;
+			
+			json.accessors.push({
+				bufferView: pointer,
+				byteOffset: 0,
+				type: "VEC2",
+				componentType: 5126,
+				count: mesh.primitives[p].texCoords.length/2
+			});
+			outMesh.primitives[p].attributes.TEXCOORD_0 = pointer;
+			
+			outMesh.primitives[p].material = 0; // todo: use materials
+		}
+		
+		json.meshes.push(outMesh);
+	}
+	
+	let bufferLength = offset;
+	
+	json.buffers[0] = {
+		byteLength: bufferLength
+	};
+	
+	json.materials[0] = {
+		doubleSided: false,
+		name: "default",
+		pbrMetallicRoughness: {
+			baseColorFactor: [0.8, 0.8, 0.8, 1],
+			metallicFactor: 0,
+			roughnessFactor: 0.5
+		}
+	}
+	
+	/*======== create buffer ========*/
+	//let buffer = new Blob(bufferViews);
+	
+	console.log(json);
+	
+	let jsonString = JSON.stringify(json);
+	
+	const encoder = new TextEncoder();
+	let encodedText = encoder.encode(jsonString);
+	
+	if(encodedText.byteLength%4 !== 0){
+		// the gltf standard wants the length of a every chunk to be a multiple of 4 bytes.
+		// let's add spaces to the json string to comply with that.
+		
+		let missingSpaces = 4-encodedText.byteLength%4;
+		let spaces = " ".repeat(missingSpaces);
+		jsonString += spaces;
+		encodedText = encoder.encode(jsonString);
+	}
+	
+	let fileLength = 12 + 8 + encodedText.length + 8 + bufferLength;
+	
+	let fileHeader = new Uint32Array(3);
+	fileHeader[0] = 0x46546C67;
+	fileHeader[1] = 2;
+	fileHeader[2] = fileLength;
+	
+	let jsonHeader = new Uint32Array(2);
+	jsonHeader[0] = encodedText.length;
+	jsonHeader[1] = 0x4E4F534A;
+	
+	let bufferHeader = new Uint32Array(2);
+	bufferHeader[0] = bufferLength;
+	bufferHeader[1] = 0x004E4942;
+	
+	let fileBlob = new Blob([
+		fileHeader,
+		jsonHeader,
+		encodedText,
+		bufferHeader,
+		...bufferViews
+	], {type: "model/glb"});
+	
+	console.log(fileLength);
+	console.log(fileBlob);
+	
+	let objectUrl = URL.createObjectURL(fileBlob);
+	
+	let downloadLink = document.createElement("a");
+	downloadLink.innerHTML = "Download GLB";
+	downloadLink.download = "output.glb";
+	downloadLink.href = objectUrl;
+	structureContainer.appendChild(downloadLink);
+	
+	
+	
+}
+
 function processScenes(){
 	for(let i in glb.scenes){
 		scenes[i] = {
 			nodes: processNodes(glb.scenes[i].nodes)
 		};
 	}
-	
-	gl.addScene(scenes[0]);
 }
 
 function processNodes(nodes){
@@ -314,11 +430,72 @@ function processNodes(nodes){
 				node.matrix = multiplyMatrices(node.matrix, makeScaleMatrix(glb.nodes[nodes[n]].scale));
 			}
 		}
+		
 		node.children = processNodes(glb.nodes[nodes[n]].children);
 		outNodes.push(node);
-		
 	}
 	return outNodes;
+}
+
+function flattenMeshes(){
+	for(let s in scenes){
+		for(let n in scenes[s].nodes){
+			flattenNodes(scenes[s].nodes[n]);
+		}
+	}
+}
+
+function transformPositions(positions, matrix){
+	
+	let out = new Float32Array(positions.length);
+	
+	for(let i = 0; i < positions.length; i += 3){
+		let vec = [
+			positions[i  ],
+			positions[i+1],
+			positions[i+2],
+			1.0
+		];
+		
+		let transformedVec = multiplyMatrixByVector(matrix, vec);
+		
+		out[i  ] = transformedVec[0];
+		out[i+1] = transformedVec[1];
+		out[i+2] = transformedVec[2];
+	}
+	
+	return out;
+}
+
+function flattenNodes(node){
+	if(node.mesh !== undefined){
+		let mesh = meshes[node.mesh];
+		let flatMesh = {};
+		flatMesh.id = node.mesh;
+		flatMesh.nodeName = node.name;
+		flatMesh.name = mesh.name;
+		flatMesh.primitives = [];
+		
+		let modelMatrix = node.matrix;
+		
+		for(let p in mesh.processedPrimitives){
+			let primitive = {};
+			primitive.indices = mesh.processedPrimitives[p].indexView;
+			
+			primitive.positions = transformPositions(mesh.processedPrimitives[p].positionView, modelMatrix);
+			primitive.normals = transformPositions(mesh.processedPrimitives[p].normalView, modelMatrix);
+			primitive.texCoords = transformPositions(mesh.processedPrimitives[p].texCoordView, modelMatrix);
+			
+			
+			flatMesh.primitives.push(primitive);
+		}
+		
+		flatMeshes.push(flatMesh);
+	}
+	
+	for(let c in node.children){
+		flattenNodes(node.children[c]);
+	}
 }
 
 function processBuffers(){
@@ -368,11 +545,6 @@ function processTextures(){
 		let img = images[tex.source];
 		//console.log(img, img.width, img.height);
 		
-		gl.addTexture({
-			id: t,
-			img: img,
-			sampler: sampler
-		});
 	}
 }
 
@@ -444,8 +616,6 @@ function processMaterials(){
 			}
 			
 			materials[m] = material;
-			
-			gl.addMaterial(material);
 		}
 	}
 }
@@ -491,10 +661,14 @@ function processMeshes(){
 					normalView[i] = normalBufferView.view.getFloat32(i*4, true);
 				}
 				
-				let texCoordView;
-				let texCoordByteStride;
+				let texCoordView = 0;
+				let texCoordByteStride = 0;
 				
-				if(mesh.primitives[p].attributes.TEXCOORD_0 !== undefined){
+				if(mesh.primitives[p].attributes.TEXCOORD_0 === undefined){
+					//console.error(mesh.primitives[p].attributes);
+					
+				} else {
+					
 					let texCoordAccessor = glb.accessors[mesh.primitives[p].attributes.TEXCOORD_0]; //note: this isn't necessarily always TEXCOORD_0. In this case, we'd fall flat on our face.
 					let texCoordBufferView = glb.bufferViews[texCoordAccessor.bufferView];
 					texCoordByteStride = 4*2; // 4 bytes for float32, *2 for VEC2
@@ -505,11 +679,7 @@ function processMeshes(){
 					for(let i = 0; i < texCoordBufferView.byteLength/4; i++){
 						texCoordView[i] = texCoordBufferView.view.getFloat32(i*4, true);
 					}
-				} else {
-					//console.warn("TEXCOORD_0 is undefined:");
-					//console.warn(mesh.primitives[p].attributes);
-					texCoordView = new Float32Array(indexBufferView.byteLength/4);
-					texCoordByteStride = 4*2;
+				
 				}
 				
 				primitives.push({
@@ -524,206 +694,8 @@ function processMeshes(){
 					material: mesh.primitives[p].material
 				});
 			}
-			
-			let outMesh = {
-				id: m,
-				name: mesh.name,
-				primitives: primitives
-			}
-			
-			gl.addMesh(outMesh);
+			mesh.processedPrimitives = primitives;
+			meshes[m] = mesh;
 		}
-	}
-}
-
-function render(){
-	
-	let fieldOfViewInRadians = 10/180*Math.PI;
-	let aspectRatio = canvas.width/canvas.height;
-	let near = 0.001;
-	let far = 5;
-	
-	let f = 1.0 / Math.tan(fieldOfViewInRadians / 2);
-	let rangeInv = 1 / (near - far);
-	
-	let modelTransform = [
-		1, 0, 0, 0,
-		0, 1, 0, 0,
-		0, 0, 1, 0,
-		0, 0, 0, 1
-	];
-	
-	let scaleTransform = [
-		scale, 0, 0, 0,
-		0, scale, 0, 0,
-		0, 0, scale, 0,
-		0, 0, 0, 1
-	];
-	
-	let offsetTransform = [
-		1, 0, 0, 0,
-		0, 1, 0, 0,
-		0, 0, 1, 0,
-		0, offsetY, 0, 1
-	];
-	
-	modelTransform = multiplyArrayOfMatrices([
-		modelTransform,
-		scaleTransform,
-		offsetTransform
-		//rotateTransform
-	]);
-	
-	let viewTransforms = [
-		[
-			1, 0, 0, 0,
-			0, 1, 0, 0,
-			0, 0, 1, 0,
-			0, 0, 0, 1
-		]
-	];
-	
-	let sin = Math.sin;
-	let cos = Math.cos;
-	let a;
-	
-	a = rotationY + currentRotationY;
-	viewTransforms.push([
-		 cos(a),   0, sin(a),   0,
-			  0,   1,      0,   0,
-		-sin(a),   0, cos(a),   0,
-		      0,   0,      0,   1
-	]);
-	
-	a = rotationX + currentRotationX;
-	viewTransforms.push([
-		1,       0,        0,     0,
-		0,  cos(a),  sin(a),     0,
-		0,  -sin(a),   cos(a),     0,
-		0,       0,        0,     1
-	]);
-	
-	viewTransforms.push([
-		1, 0, 0, 0,
-		0, 1, 0, 0,
-		0, 0, 1, 0,
-		position[0], position[1], position[2], 1
-	]);
-	
-	viewTransform = multiplyArrayOfMatrices(viewTransforms);
-
-	let perspectiveTransform = [
-		f / aspectRatio, 0,                          0,   0,
-		0,               f,                          0,   0,
-		0,               0,    (near + far) * rangeInv,  -1,
-		0,               0,  near * far * rangeInv * 2,   0
-	];
-	
-	/*let perspectiveTransform = [
-		1, 0, 0, 0,
-		0, 1, 0, 0,
-		0, 0, 1, 0,
-		0, 0, 0, 1
-	];*/
-	
-	gl.render(modelTransform, viewTransform, perspectiveTransform);
-	
-	angle += 0.01;
-	
-	requestAnimationFrame(render);
-}
-
-function renderScene(scene){
-	//context.clearRect(0, 0, canvas.width, canvas.height);
-	context.fillStyle = "#000";
-	context.fillRect(0, 0, canvas.width, canvas.height);
-	
-	/*let transform = [
-		1, 0, 0, 0,
-		0, 1, 0, 0,
-		0, 0, 1, 0,
-		0, 0, 0, 1
-	];*/
-	
-	let transform = [
-		Math.cos(angle), 0, Math.sin(angle), 0,
-		0, 1, 0, 0,
-		-Math.sin(angle), 0, Math.cos(angle), 0,
-		0, 0, 0, 1
-	];
-	
-	for(let n in scene.nodes){
-		renderNode(scene.nodes[n], transform);
-	}
-	
-	//angle += 0.01;
-}
-
-function renderNode(node, transform){
-	let localTransform = multiplyMatrices(transform, node.matrix);
-	//console.log(localTransform);
-	if(node.mesh !== undefined){
-		let mesh = glb.meshes[node.mesh];
-		for(let p in mesh.primitives){
-			
-			/*let r = ((m+3)*57)%200 + 56;
-			let g = ((m+2)*185)%200 + 56;
-			let b = ((m+6)*107)%200 + 56;
-			let color = "rgb("+r+", "+g+", "+b+")";*/
-			let color = "#0f0";
-			context.strokeStyle = color;
-			
-			let positions = mesh.primitives[p].positions;
-			if(positions){
-				for(let i = 0; i < positions.length; i += 3){
-					if(!positions[i+3]){
-						break;
-					}
-					let triangle = [];
-					for(let v = 0; v < 3; v++){
-						//let x = positions[i+v][0];
-						//let y = positions[i+v][1];
-						//let z = positions[i+v][2];
-						
-						//y = y*-1 + offsetY;
-						//x = x * Math.cos(angle) - z * Math.sin(angle);
-						
-						let pos = [positions[i+v][0], positions[i+v][1], positions[i+v][2]];
-						//pos[1] = pos[1] * -1 + offsetY;
-						
-						let point = makeTranslationMatrix(pos);
-						point = multiplyMatrices(localTransform, point);
-						
-						let x = point[12];
-						let y = point[13];
-						
-						y = y*-1 + offsetY;
-						
-						//console.log(x, y);
-						
-						x = (x*scale+0.5)*canvas.width;
-						y = (y*scale+0.5)*canvas.height;
-						
-						triangle[v] = [x, y];
-					}
-					context.beginPath();
-					context.moveTo(triangle[0][0], triangle[0][1]);
-					context.lineTo(triangle[1][0], triangle[1][1]);
-					context.lineTo(triangle[2][0], triangle[2][1]);
-					context.closePath();
-					context.stroke();
-					/*context.beginPath();
-					context.fillRect(triangle[0][0], triangle[0][1], 1, 1);
-					context.fillRect(triangle[1][0], triangle[1][1], 1, 1);
-					context.fillRect(triangle[2][0], triangle[2][1], 1, 1);*/
-					//context.fill();
-					//console.log(triangle);
-				}
-			}
-		}
-	}
-	
-	for(let c in node.children){
-		renderNode(node.children[c], localTransform);
 	}
 }

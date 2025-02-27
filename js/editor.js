@@ -374,19 +374,25 @@ function processMeshes(){
 					normalView[i] = normalBufferView.view.getFloat32(i*4, true);
 				}
 				
+				let texCoordView = 0;
+				let texCoordByteStride = 0;
+				
 				if(mesh.primitives[p].attributes.TEXCOORD_0 === undefined){
 					console.error(mesh.primitives[p].attributes);
-				}
+					
+				} else {
+					
+					let texCoordAccessor = glb.accessors[mesh.primitives[p].attributes.TEXCOORD_0]; //note: this isn't necessarily always TEXCOORD_0. In this case, we'd fall flat on our face.
+					let texCoordBufferView = glb.bufferViews[texCoordAccessor.bufferView];
+					texCoordByteStride = 4*2; // 4 bytes for float32, *2 for VEC2
+					if(texCoordBufferView.byteStride){
+						texCoordByteStride = texCoordBufferView.byteStride;
+					}
+					texCoordView = new Float32Array(texCoordBufferView.byteLength/4);
+					for(let i = 0; i < texCoordBufferView.byteLength/4; i++){
+						texCoordView[i] = texCoordBufferView.view.getFloat32(i*4, true);
+					}
 				
-				let texCoordAccessor = glb.accessors[mesh.primitives[p].attributes.TEXCOORD_0]; //note: this isn't necessarily always TEXCOORD_0. In this case, we'd fall flat on our face.
-				let texCoordBufferView = glb.bufferViews[texCoordAccessor.bufferView];
-				let texCoordByteStride = 4*2; // 4 bytes for float32, *2 for VEC2
-				if(texCoordBufferView.byteStride){
-					texCoordByteStride = texCoordBufferView.byteStride;
-				}
-				let texCoordView = new Float32Array(texCoordBufferView.byteLength/4);
-				for(let i = 0; i < texCoordBufferView.byteLength/4; i++){
-					texCoordView[i] = texCoordBufferView.view.getFloat32(i*4, true);
 				}
 				
 				primitives.push({

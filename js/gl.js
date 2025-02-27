@@ -24,6 +24,8 @@ function Renderer(canvasId){
 	let normalTransformRef;
 	let aspectRef;
 	let colorRef;
+	let roughnessRef;
+	let metallicRef;
 	let cameraZRef;
 	
 	let samplerRef;
@@ -82,7 +84,8 @@ function Renderer(canvasId){
 		colorRef = gl.getUniformLocation(shaderProgram, "color");
 		cameraZRef = gl.getUniformLocation(shaderProgram, "cameraZ");
 		emissiveRef = gl.getUniformLocation(shaderProgram, "emissive");
-		shinyRef = gl.getUniformLocation(shaderProgram, "shiny");
+		roughnessRef = gl.getUniformLocation(shaderProgram, "roughness");
+		metallicRef = gl.getUniformLocation(shaderProgram, "metallic");
 		samplerRef = gl.getUniformLocation(shaderProgram, "uSampler");
 		normalSamplerRef = gl.getUniformLocation(shaderProgram, "uNormalSampler");
 		skyboxSamplerRef = gl.getUniformLocation(shaderProgram, "uSkyboxSampler");
@@ -205,7 +208,7 @@ function Renderer(canvasId){
 			gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, primitive.indexBuffer);
 			gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, primitive.indices, gl.STATIC_DRAW);
 			
-			console.log(primitive.vertices.length/3, primitive.normals.length/3, primitive.texCoords.length/2, primitive.indices.length);
+			//console.log(primitive.vertices.length/3, primitive.normals.length/3, primitive.texCoords.length/2, primitive.indices.length);
 			
 			primitives.push(primitive);
 		}
@@ -251,6 +254,9 @@ function Renderer(canvasId){
 		//gl.clearColor(1, 1, 1, 1);
 		
 		//gl.viewport(0, 0, canvas.width, canvas.height);
+		
+		gl.enable(gl.CULL_FACE);
+		gl.cullFace(gl.BACK);
 
 		gl.clear(gl.COLOR_BUFFER_BIT);
 		gl.clear(gl.DEPTH_BUFFER_BIT);
@@ -323,6 +329,22 @@ function Renderer(canvasId){
 	}
 	
 	function renderPrimitive(primitive, localTransform){
+		
+		if(primitive.material.name == "Luft"
+		|| primitive.material.name == "Farbe, gelb"
+		|| primitive.material.name == "Farbe, blau"
+		|| primitive.material.name == "Farbe, schwarz"
+		|| primitive.material.name == "Farbe, weiss"
+		){
+			return false;
+		}
+		
+		if(primitive.material.name == "Glas Normalglas"){
+			primitive.material.pbrMetallicRoughness.baseColorFactor[3] = 0.4;
+			primitive.material.pbrMetallicRoughness.metallicFactor = 0.9;
+			primitive.material.pbrMetallicRoughness.roughnessFactor = 0.0;
+		}
+		
 		gl.bindBuffer(gl.ARRAY_BUFFER, primitive.normalsBuffer);
 		let normal = gl.getAttribLocation(shaderProgram, "vertexNormal");
 		gl.vertexAttribPointer(normal, 3, gl.FLOAT, false, primitive.normalByteStride, 0);
@@ -351,7 +373,8 @@ function Renderer(canvasId){
 		
 		let color = primitive.material.pbrMetallicRoughness.baseColorFactor;
 		gl.uniform4f(colorRef, color[0], color[1], color[2], color[3]);
-		gl.uniform1f(shinyRef, 0.2);
+		gl.uniform1f(roughnessRef, primitive.material.pbrMetallicRoughness.roughnessFactor);
+		gl.uniform1f(metallicRef, primitive.material.pbrMetallicRoughness.metallicFactor);
 		gl.uniform1f(emissiveRef, 0);
 		
 		gl.uniformMatrix4fv(modelRef, false, localTransform);
