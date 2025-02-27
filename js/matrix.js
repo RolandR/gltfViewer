@@ -21,6 +21,28 @@ function multiplyVectorByMatrix(v, m){
 	
 }
 
+function normalizeVec4(a) {
+	
+	let out = [0, 0, 0, 0];
+	
+	let x = a[0];
+	let y = a[1];
+	let z = a[2];
+	let w = a[3];
+	let len = x * x + y * y + z * z + w * w;
+	
+	if (len > 0) {
+		len = 1 / Math.sqrt(len);
+	}
+	
+	out[0] = x * len;
+	out[1] = y * len;
+	out[2] = z * len;
+	out[3] = w * len;
+	
+	return out;
+}
+
 function multiplyMatrices(a, b){
 
 	var result = [];

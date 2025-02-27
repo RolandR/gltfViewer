@@ -445,12 +445,12 @@ function flattenMeshes(){
 	}
 }
 
-function transformPositions(positions, matrix, isVector){
+function transformPositions(positions, matrix, isNormal){
 	
 	let out = new Float32Array(positions.length);
 	
 	let v4 = 1.0;
-	if(isVector){
+	if(isNormal){
 		v4 = 0.0;
 	}
 	
@@ -463,6 +463,10 @@ function transformPositions(positions, matrix, isVector){
 		];
 		
 		let transformedVec = multiplyMatrixByVector(matrix, vec);
+		
+		if(isNormal){
+			transformedVec = normalizeVec4([transformedVec[0], transformedVec[1], transformedVec[2], 0.0]);
+		}
 		
 		out[i  ] = transformedVec[0];
 		out[i+1] = transformedVec[1];
