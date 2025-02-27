@@ -12,6 +12,7 @@ body{
 	font-family: sans-serif;
 	background-color: #333;
 	color: #eee;
+	font-size: 14px;
 }
 
 #loadingStatus{
@@ -65,6 +66,7 @@ body{
 }
 
 #fileUpload{
+	margin: 10px;
 	position: absolute;
 }
 
@@ -76,4 +78,43 @@ body{
 
 #offsetYInput{
 	top: 60px;
+}
+
+#structureContainer{
+	padding-top: 40px;
+}
+
+.info{
+	border: 1px #000 solid;
+	margin: 5px 10px;
+	background-image: linear-gradient(to bottom, rgba(20, 60, 20, 0.4), rgba(0, 40, 0, 0.4));
+	padding: 5px;
+}
+
+.sceneInfo, .nodeInfo{
+	background-image: linear-gradient(to bottom, rgba(60, 60, 20, 0.4), rgba(40, 40, 0, 0.4));
+}
+
+.nodeInfo{
+	margin: 2px 10px;
+	padding: 2px 5px;
+	line-height: 1.3em;
+}
+
+.meshInfo, .primitiveInfo{
+	background-image: linear-gradient(to bottom, rgba(60, 20, 60, 0.4), rgba(40, 0, 40, 0.4));
+}
+
+.primitiveInfo{
+	margin: 2px 10px;
+	padding: 2px 5px;
+	line-height: 1.3em;
+}
+
+h2{
+	font-size: 20px;
+}
+
+h3{
+	font-size: 14px;
 }
