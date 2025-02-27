@@ -225,7 +225,7 @@ function buildNewFile(){
 				componentType: 5123,
 				count: mesh.primitives[p].indices.length
 			});
-			outMesh.primitives[pointer].indices = pointer;
+			outMesh.primitives[p].indices = pointer;
 			
 			/*======== positions ========*/
 			bufferViews.push(mesh.primitives[p].positions);
@@ -445,16 +445,21 @@ function flattenMeshes(){
 	}
 }
 
-function transformPositions(positions, matrix){
+function transformPositions(positions, matrix, isVector){
 	
 	let out = new Float32Array(positions.length);
+	
+	let v4 = 1.0;
+	if(isVector){
+		v4 = 0.0;
+	}
 	
 	for(let i = 0; i < positions.length; i += 3){
 		let vec = [
 			positions[i  ],
 			positions[i+1],
 			positions[i+2],
-			1.0
+			v4
 		];
 		
 		let transformedVec = multiplyMatrixByVector(matrix, vec);
@@ -462,6 +467,10 @@ function transformPositions(positions, matrix){
 		out[i  ] = transformedVec[0];
 		out[i+1] = transformedVec[1];
 		out[i+2] = transformedVec[2];
+		
+		/*out[i  ] = positions[i+0];
+		out[i+1] = positions[i+1];
+		out[i+2] = positions[i+2];*/
 	}
 	
 	return out;
@@ -482,9 +491,9 @@ function flattenNodes(node){
 			let primitive = {};
 			primitive.indices = mesh.processedPrimitives[p].indexView;
 			
-			primitive.positions = transformPositions(mesh.processedPrimitives[p].positionView, modelMatrix);
-			primitive.normals = transformPositions(mesh.processedPrimitives[p].normalView, modelMatrix);
-			primitive.texCoords = transformPositions(mesh.processedPrimitives[p].texCoordView, modelMatrix);
+			primitive.positions = transformPositions(mesh.processedPrimitives[p].positionView, modelMatrix, false);
+			primitive.normals = transformPositions(mesh.processedPrimitives[p].normalView, modelMatrix, true);
+			primitive.texCoords = mesh.processedPrimitives[p].texCoordView;
 			
 			
 			flatMesh.primitives.push(primitive);
