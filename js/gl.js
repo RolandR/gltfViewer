@@ -143,9 +143,11 @@ function Renderer(canvasId){
 		gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_X, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, skyboxFt);
 		gl.texImage2D(gl.TEXTURE_CUBE_MAP_NEGATIVE_X, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, skyboxBk);
 		
-		gl.generateMipmap(gl.TEXTURE_CUBE_MAP);
+		//gl.generateMipmap(gl.TEXTURE_CUBE_MAP);
 		gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
-		gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+		//gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+		gl.generateMipmap(gl.TEXTURE_CUBE_MAP);
+		gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST);
 	}
 	
 	function addMesh(mesh){
