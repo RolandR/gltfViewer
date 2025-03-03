@@ -145,8 +145,7 @@ function finishProcessing(){
 	processScenes();
 	
 	flattenMeshes();
-	console.log(flatMeshes);
-	
+	flatMeshes = [mergeMeshes(flatMeshes)];
 	buildNewFile();
 	
 	setTimeout(function(){
@@ -228,7 +227,7 @@ function buildNewFile(){
 				bufferView: pointer,
 				byteOffset: 0,
 				type: "SCALAR",
-				componentType: 5123,
+				componentType: 5125, // 5125 = Uint32
 				count: mesh.primitives[p].indices.length
 			});
 			outMesh.primitives[p].indices = pointer;
@@ -483,17 +482,19 @@ function flattenMeshes(){
 }
 
 function flattenNodes(node){
+	// apply all transforms and split meshes into new meshes for each primitive
+	
 	if(node.mesh !== undefined){
 		let mesh = meshes[node.mesh];
-		let flatMesh = {};
-		flatMesh.id = node.mesh;
-		flatMesh.nodeName = node.name;
-		flatMesh.name = mesh.name;
-		flatMesh.primitives = [];
-		
 		let modelMatrix = node.matrix;
-		
 		for(let p in mesh.processedPrimitives){
+			
+			let flatMesh = {};
+			//flatMesh.id = node.mesh;
+			flatMesh.nodeName = node.name+"/"+p;
+			flatMesh.name = mesh.name+"/"+p;
+			flatMesh.primitives = [];
+		
 			let primitive = {};
 			primitive.indices = mesh.processedPrimitives[p].indexView;
 			
@@ -503,9 +504,10 @@ function flattenNodes(node){
 			
 			
 			flatMesh.primitives.push(primitive);
+			
+			flatMeshes.push(flatMesh);
+			
 		}
-		
-		flatMeshes.push(flatMesh);
 	}
 	
 	for(let c in node.children){
@@ -550,6 +552,136 @@ function transformPositions(positions, matrix, isNormal){
 	}
 	
 	return out;
+}
+
+function mergeMeshes(meshes){
+	// Note: This has to be done after meshes have been split by primitives.
+	
+	let newMesh = {};
+	newMesh.name = meshes[0].name+".MERGED";
+	newMesh.nodeName = meshes[0].nodeName+".MERGED";
+	
+	let totalSizes = {
+		indices: 0,
+		positions: 0,
+		normals: 0,
+		texCoords: 0
+	}
+	
+	totalSizes = meshes.reduce(
+		function(accumulator, currentValue){
+			accumulator.indices += currentValue.primitives[0].indices.length;
+			accumulator.positions += currentValue.primitives[0].positions.length;
+			accumulator.normals += currentValue.primitives[0].normals.length;
+			if(currentValue.primitives[0].texCoords){
+				accumulator.texCoords += currentValue.primitives[0].texCoords.length;
+			}
+			
+			return accumulator;
+		},
+		totalSizes
+	);
+	
+	console.log(totalSizes);
+	
+	newMesh.primitives = [{
+		indices: new Uint32Array(totalSizes.indices),
+		positions: new Float32Array(totalSizes.positions),
+		normals: new Float32Array(totalSizes.normals),
+		texCoords: null // TODO: later maybe
+	}];
+	
+	let indexOffset = 0;
+	let positionOffset = 0;
+	
+	for(let m in meshes){
+	
+		newMesh.primitives[0].indices.set(
+			meshes[m].primitives[0].indices.map(
+				(num) => num+(positionOffset/3)
+			),
+			indexOffset
+		);
+		
+		newMesh.primitives[0].positions.set(
+			meshes[m].primitives[0].positions,
+			positionOffset
+		);
+		
+		newMesh.primitives[0].normals.set(
+			meshes[m].primitives[0].normals,
+			positionOffset
+		);
+		
+		indexOffset += meshes[m].primitives[0].indices.length;
+		positionOffset += meshes[m].primitives[0].positions.length;
+		
+	}
+	
+	console.log(newMesh.primitives[0].indices);
+	console.log(newMesh.primitives[0].positions);
+	
+	return newMesh;
+	
+}
+
+function listBiggestMeshes(count){
+	let meshSizes = [];
+	for(let i in flatMeshes){
+		let mesh = flatMeshes[i];
+		let primitiveSizes = [];
+		let totalSize = 0;
+		for(let p in mesh.primitives){
+			primitiveSizes.push(mesh.primitives[p].indices.length/3);
+			totalSize += mesh.primitives[p].indices.length/3;
+		}
+		let maxSize = Math.max(...primitiveSizes);
+		meshSizes.push({
+			nodeName: mesh.nodeName,
+			maxSize: maxSize,
+			totalSize: totalSize,
+			primitiveSizes: primitiveSizes
+		});
+	}
+	
+	meshSizes.sort(function(a, b){
+		if(a.totalSize > b.totalSize){
+			return -1;
+		} else if(a.totalSize < b.totalSize){
+			return 1;
+		} else {
+			return 0;
+		}
+	});
+	
+	if(count === undefined){
+		count = meshSizes.length;
+	}
+	
+	console.log(count+" biggest meshes by total triangle count:");
+	
+	for(let i = 0; i < count; i++){
+		let outString = (i+1)+".) "+meshSizes[i].totalSize+": "+meshSizes[i].nodeName+"";
+		if(meshSizes[i].primitiveSizes.length > 1){
+			outString += " (";
+			for(let p in meshSizes[i].primitiveSizes){
+				if(p != 0){
+					outString += ", ";
+				}
+				outString += meshSizes[i].primitiveSizes[p];
+			}
+			outString += ")";
+		}
+		console.log(outString);
+	}
+}
+
+function listNumberedNodes(){
+	const regex = /^.*\.\d{3}$/;
+	let list = [];
+	
+	
+	
 }
 
 function processBuffers(){
@@ -684,11 +816,11 @@ function processMeshes(){
 				
 				let indexAccessor = glb.accessors[mesh.primitives[p].indices];
 				let indexBufferView = glb.bufferViews[indexAccessor.bufferView];
-				let indexByteStride = 2; // 2 bytes for Uint16
+				let indexByteStride = 4; // 2 bytes for Uint16
 				if(indexBufferView.byteStride){
 					indexByteStride = indexBufferView.byteStride;
 				}
-				let indexView = new Uint16Array(indexBufferView.byteLength/2);
+				let indexView = new Uint32Array(indexBufferView.byteLength/2);
 				for(let i = 0; i < indexBufferView.byteLength/2; i++){
 					indexView[i] = indexBufferView.view.getUint16(i*2, true);
 				}

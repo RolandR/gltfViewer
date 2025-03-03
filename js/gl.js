@@ -388,7 +388,7 @@ function Renderer(canvasId){
 		
 		//console.log(mesh.name);
 		//console.log(primitive);
-		gl.drawElements(gl.TRIANGLES, primitive.size, gl.UNSIGNED_SHORT, 0);
+		gl.drawElements(gl.TRIANGLES, primitive.size, gl.UNSIGNED_INT, 0);
 	}
 	
 	function renderTransparentPrimitives(){

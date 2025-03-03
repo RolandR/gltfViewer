@@ -460,13 +460,13 @@ function processMeshes(){
 				
 				let indexAccessor = glb.accessors[mesh.primitives[p].indices];
 				let indexBufferView = glb.bufferViews[indexAccessor.bufferView];
-				let indexByteStride = 2; // 2 bytes for Uint16
+				let indexByteStride = 4; // 2 bytes for Uint16
 				if(indexBufferView.byteStride){
 					indexByteStride = indexBufferView.byteStride;
 				}
-				let indexView = new Uint16Array(indexBufferView.byteLength/2);
-				for(let i = 0; i < indexBufferView.byteLength/2; i++){
-					indexView[i] = indexBufferView.view.getUint16(i*2, true);
+				let indexView = new Uint32Array(indexBufferView.byteLength/2);
+				for(let i = 0; i < indexBufferView.byteLength/4; i++){
+					indexView[i] = indexBufferView.view.getUint32(i*4, true);
 				}
 					
 				let positionAccessor = glb.accessors[mesh.primitives[p].attributes.POSITION];

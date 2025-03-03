@@ -34,13 +34,13 @@ void main(void){
     highp vec4 directionalLightColor = vec4(0.99, 0.99, 0.99, 1.0);
 	highp vec4 directionalVec4 = normalize(vec4(0.0, 1.0, 1.0, 1.0));
     highp vec3 directionalVector = normalize(directionalVec4).xyz;
-    highp vec3 localNormal = normalize(inverse(transpose(mat3(view))) * normal);
+    //highp vec3 localNormal = normalize(inverse(transpose(mat3(view))) * normal);
     
-    highp mat3 normalizedView = inverse(transpose(mat3(view)));
+    //highp mat3 normalizedView = inverse(transpose(mat3(view)));
     
     highp vec4 cameraLocation = vec4(0.0, 0.0, cameraZ, 1.0);
     
-    highp vec4 localCamera = cameraLocation;
+    //highp vec4 localCamera = cameraLocation;
     
     vec4 localCoord = coord;
     localCoord.z = 0.0; // todo: this doesn't quite work with perspective
@@ -51,7 +51,7 @@ void main(void){
     
     highp vec3 reflectedDirection = normalize(reflect(vd, normal));
     
-    vec4 skybox = textureLod(uSkyboxSampler, reflectedDirection, mix(1.0, 8.0, roughness));
+    //vec4 skybox = textureLod(uSkyboxSampler, reflectedDirection, mix(1.0, 8.0, roughness));
     
     vec4 ambient = textureLod(uSkyboxSampler, normal, 8.0);
 
@@ -60,9 +60,9 @@ void main(void){
     //lighting = ambientLight * 1.0 + (directionalLightColor * directional * 1.0);
 
 	//vec4 texColor = texture(uSampler, vTexCoord);
-	vec4 texColor = color;
+	vec4 texColor = color*ambient + directional*directionalLightColor*color*1.0;
 	
-	texColor = mix(texColor*ambient + directional*directionalLightColor*texColor*1.0, skybox, metallic);
+	//texColor = mix(texColor, skybox, metallic);
 	
 	//texColor.rgb = mix(skybox.rgb, texColor.rgb, 0.1);
 
