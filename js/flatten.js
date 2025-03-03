@@ -1,4 +1,12 @@
 
+
+
+// Please note: This script is tailored for our specific application, with specific files.
+//              It probably won't do much of use on your general .glb file.
+//              However, you may get some use out of it if you remove the "storey"-specific parts.
+
+
+
 const fileInput = document.getElementById("fileUpload");
 const imagesContainer = document.getElementById("imagesContainer");
 
@@ -14,6 +22,8 @@ let textures = [];
 let meshes = [];
 
 let flatMeshes = [];
+let newNodes = [];
+let newScene = {};
 
 let outstandingImageCount = 0;
 
@@ -148,12 +158,48 @@ function finishProcessing(){
 	
 	let newMeshes = [];
 	
-	for(let i in materials){
-		let materialMeshes = getMeshesByMaterial(materials[i].id);
-		if(materialMeshes.length > 0){
-			let materialMesh = mergeMeshes(materialMeshes);
-			materialMesh.primitives[0].material = materials[i].id;
-			newMeshes.push(materialMesh);
+	let storeys = [
+		//"NoStorey",
+		"U1.UG",
+		"01.OG",
+		"02.OG",
+		"03.OG",
+		"04.OG",
+		"00.EG",
+		"05.OG",
+		"06.DA"
+	];
+	
+	newScene = {
+		name: scenes[0].name,
+		nodes: []
+	};
+	
+	for(let s in storeys){
+		newNodes[s] = {
+			name: storeys[s],
+			children: []
+		}
+		newScene.nodes.push(parseInt(s));
+	}
+	
+	
+	for(let s in storeys){
+		let storeyMeshes = getMeshesByStorey(flatMeshes, storeys[s]);
+		for(let mat in materials){
+			let materialMeshes = getMeshesByMaterial(storeyMeshes, mat);
+			if(materialMeshes.length > 0){
+				let materialName = materials[mat].name;
+				let materialMesh = mergeMeshes(materialMeshes, storeys[s]+"/"+materialName);
+				materialMesh.primitives[0].material = mat;
+				newMeshes.push(materialMesh);
+				
+				newNodes.push({
+					name: materialName,
+					mesh: newMeshes.length-1
+				});
+				newNodes[s].children.push(newNodes.length-1);
+			}
 		}
 	}
 	
@@ -189,20 +235,19 @@ function buildNewFile(){
 	let bufferViews = [];
 	let offset = 0;
 	
-	json.scenes[0] = {
-		name: scenes[0].name,
-		nodes: []
-	}
+	json.scenes[0] = newScene;
 	
 	let pointer = -1;
 	
 	for(let i in flatMeshes){
 		
-		json.nodes.push({
+		/*json.nodes.push({
 			name: flatMeshes[i].nodeName,
 			mesh: i*1
 		});
-		json.scenes[0].nodes.push(json.nodes.length-1); // TODO: use actual node structure
+		json.scenes[0].nodes.push(json.nodes.length-1); // TODO: use actual node structure*/
+		
+		json.nodes = newNodes;
 		
 		let mesh = flatMeshes[i];
 		
@@ -356,7 +401,7 @@ function buildNewFile(){
 				outMesh.primitives[p].attributes.TEXCOORD_0 = pointer;
 			}
 			
-			outMesh.primitives[p].material = mesh.primitives[p].material;
+			outMesh.primitives[p].material = parseInt(mesh.primitives[p].material);
 		}
 		
 		json.meshes.push(outMesh);
@@ -439,17 +484,20 @@ function processScenes(){
 	
 	for(let i in glb.scenes){
 		scenes[i] = {
-			nodes: processNodes(glb.scenes[i].nodes, identityMatrix)
+			nodes: processNodes(glb.scenes[i].nodes, identityMatrix, "NoStorey")
 		};
 	}
 }
 
-function processNodes(nodes, parentTransform){
+function processNodes(nodes, parentTransform, storey){
 	let outNodes = [];
 	for(let n in nodes){
 		let node = {};
 		node.name = glb.nodes[nodes[n]].name;
 		node.mesh = glb.nodes[nodes[n]].mesh;
+		if(node.name.substring(0, 17) == "IfcBuildingStorey"){
+			storey = node.name.substring(18);
+		}
 		if(glb.nodes[nodes[n]].matrix){
 			node.matrix = glb.nodes[nodes[n]].matrix;
 		} else {
@@ -474,8 +522,9 @@ function processNodes(nodes, parentTransform){
 		}
 		
 		node.matrix = multiplyMatrices(parentTransform, node.matrix);
+		node.storey = storey;
 		
-		node.children = processNodes(glb.nodes[nodes[n]].children, node.matrix);
+		node.children = processNodes(glb.nodes[nodes[n]].children, node.matrix, storey);
 		outNodes.push(node);
 	}
 	return outNodes;
@@ -501,6 +550,8 @@ function flattenNodes(node){
 			//flatMesh.id = node.mesh;
 			flatMesh.nodeName = node.name+"/"+p;
 			flatMesh.name = mesh.name+"/"+p;
+			flatMesh.storey = node.storey;
+			
 			flatMesh.primitives = [];
 		
 			let primitive = {};
@@ -563,17 +614,25 @@ function transformPositions(positions, matrix, isNormal){
 	return out;
 }
 
-function getMeshesByMaterial(materialId){
+function getMeshesByMaterial(meshes, materialId){
 	// Note: This only works properly if meshes have been split by primitives.
-	return flatMeshes.filter(function(mesh){return mesh.primitives[0].material == materialId});
+	return meshes.filter(function(mesh){return mesh.primitives[0].material == materialId});
 }
 
-function mergeMeshes(meshes){
+function getMeshesByStorey(meshes, storey){
+	// Note: This only works properly if meshes have been flattened and all that stuff.
+	return meshes.filter(function(mesh){return mesh.storey == storey});
+}
+
+function mergeMeshes(meshes, name){
 	// Note: This has to be done after meshes have been split by primitives.
 	
 	let newMesh = {};
-	newMesh.name = meshes[0].name+".MERGED";
-	newMesh.nodeName = meshes[0].nodeName+".MERGED";
+	//newMesh.name = meshes[0].name+".MERGED";
+	//newMesh.nodeName = meshes[0].nodeName+".MERGED";
+	
+	newMesh.name = name;
+	newMesh.nodeName = name;
 	
 	let totalSizes = {
 		indices: 0,
@@ -754,13 +813,8 @@ function processMaterials(){
 			let mat = glb.materials[m];
 			
 			let material = {
-				id: m,
 				name: "default",
 				pbrMetallicRoughness: {
-					baseColorTexture: {
-						index: 0,
-						texCoord: 0
-					},
 					baseColorFactor: [1, 1, 1, 1],
 					metallicFactor: 1,
 					roughnessFactor: 1
@@ -771,7 +825,6 @@ function processMaterials(){
 				}*/
 				emissiveFactor: [0, 0, 0],
 				alphaMode: "OPAQUE",
-				alphaCutoff: 0.5,
 				doubleSided: false
 			};
 			
@@ -780,6 +833,7 @@ function processMaterials(){
 			}
 			if(mat.pbrMetallicRoughness){
 				if(mat.pbrMetallicRoughness.baseColorTexture){
+					material.pbrMetallicRoughness.baseColorTexture = {};
 					if(mat.pbrMetallicRoughness.baseColorTexture.index){
 						material.pbrMetallicRoughness.baseColorTexture.index = mat.pbrMetallicRoughness.baseColorTexture.index;
 					}
@@ -808,8 +862,10 @@ function processMaterials(){
 			if(mat.alphaMode){
 				material.alphaMode = mat.alphaMode;
 			}
-			if(mat.alphaCutoff){
-				material.alphaCutoff = mat.alphaCutoff;
+			if(mat.alphaMode == "MASK"){
+				if(mat.alphaCutoff){
+					material.alphaCutoff = mat.alphaCutoff;
+				}
 			}
 			if(mat.doubleSided){
 				material.doubleSided = mat.doubleSided;

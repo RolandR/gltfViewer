@@ -497,7 +497,7 @@ function processMeshes(){
 					(positionAccessor.max[2] + positionAccessor.min[2])/2
 				]
 				
-				console.log(sizes, offsets);
+				//console.log(sizes, offsets);
 				
 				let positionBufferView = glb.bufferViews[positionAccessor.bufferView];
 				let positionByteStride = 4*3; // 4 bytes for float32, *3 for VEC3
