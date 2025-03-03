@@ -181,6 +181,8 @@ function buildNewFile(){
 		nodes: []
 	}
 	
+	let pointer = -1;
+	
 	for(let i in flatMeshes){
 		
 		json.nodes.push({
@@ -196,27 +198,31 @@ function buildNewFile(){
 			primitives: []
 		};
 		
-		
-		
 		for(let p in mesh.primitives){
 			
 			outMesh.primitives[p] = {
 				attributes: {}
 			};
-			
-			let pointer;
+			let buf;
 			
 			/*======== indices ========*/
-			bufferViews.push(mesh.primitives[p].indices);
-			pointer = bufferViews.length - 1;
+			buf = mesh.primitives[p].indices;
+			bufferViews.push(buf);
+			pointer++;
 			
 			json.bufferViews.push({
 				buffer: 0,
-				byteLength: bufferViews[pointer].byteLength,
+				byteLength: buf.byteLength,
 				byteOffset: offset,
 				target: 34963 // indices (ELEMENT_ARRAY_BUFFER)
 			});
-			offset += bufferViews[pointer].byteLength;
+			offset += buf.byteLength;
+			if(offset%4 !== 0){
+				// the gltf standard wants every bufferView offset to be a multiple of 4 bytes.
+				// let's add empty bytes between bufferViews to comply with that.
+				bufferViews.push(new Uint8Array(4-offset%4));
+				offset += 4-offset%4;
+			}
 			
 			json.accessors.push({
 				bufferView: pointer,
@@ -228,16 +234,23 @@ function buildNewFile(){
 			outMesh.primitives[p].indices = pointer;
 			
 			/*======== positions ========*/
-			bufferViews.push(mesh.primitives[p].positions);
-			pointer = bufferViews.length - 1;
+			buf = mesh.primitives[p].positions;
+			bufferViews.push(buf);
+			pointer++;
 			
 			json.bufferViews.push({
 				buffer: 0,
-				byteLength: bufferViews[pointer].byteLength,
+				byteLength: buf.byteLength,
 				byteOffset: offset,
 				target: 34962 // positions (ARRAY_BUFFER)
 			});
-			offset += bufferViews[pointer].byteLength;
+			offset += buf.byteLength;
+			if(offset%4 !== 0){
+				// the gltf standard wants every bufferView offset to be a multiple of 4 bytes.
+				// let's add empty bytes between bufferViews to comply with that.
+				bufferViews.push(new Uint8Array(4-offset%4));
+				offset += 4-offset%4;
+			}
 			
 			let min = [
 				mesh.primitives[p].positions[0],
@@ -273,16 +286,23 @@ function buildNewFile(){
 			outMesh.primitives[p].attributes.POSITION = pointer;
 			
 			/*======== normals ========*/
-			bufferViews.push(mesh.primitives[p].normals);
-			pointer = bufferViews.length - 1;
+			buf = mesh.primitives[p].normals;
+			bufferViews.push(buf);
+			pointer++;
 			
 			json.bufferViews.push({
 				buffer: 0,
-				byteLength: bufferViews[pointer].byteLength,
+				byteLength: buf.byteLength,
 				byteOffset: offset,
 				target: 34962 // positions (ARRAY_BUFFER)
 			});
-			offset += bufferViews[pointer].byteLength;
+			offset += buf.byteLength;
+			if(offset%4 !== 0){
+				// the gltf standard wants every bufferView offset to be a multiple of 4 bytes.
+				// let's add empty bytes between bufferViews to comply with that.
+				bufferViews.push(new Uint8Array(4-offset%4));
+				offset += 4-offset%4;
+			}
 			
 			json.accessors.push({
 				bufferView: pointer,
@@ -294,25 +314,34 @@ function buildNewFile(){
 			outMesh.primitives[p].attributes.NORMAL = pointer;
 			
 			/*======== texCoords ========*/
-			bufferViews.push(mesh.primitives[p].texCoords);
-			pointer = bufferViews.length - 1;
-			
-			json.bufferViews.push({
-				buffer: 0,
-				byteLength: bufferViews[pointer].byteLength,
-				byteOffset: offset,
-				target: 34962 // positions (ARRAY_BUFFER)
-			});
-			offset += bufferViews[pointer].byteLength;
-			
-			json.accessors.push({
-				bufferView: pointer,
-				byteOffset: 0,
-				type: "VEC2",
-				componentType: 5126,
-				count: mesh.primitives[p].texCoords.length/2
-			});
-			outMesh.primitives[p].attributes.TEXCOORD_0 = pointer;
+			if(mesh.primitives[p].texCoords){
+				buf = mesh.primitives[p].texCoords;
+				bufferViews.push(buf);
+				pointer++;
+				
+				json.bufferViews.push({
+					buffer: 0,
+					byteLength: buf.byteLength,
+					byteOffset: offset,
+					target: 34962 // positions (ARRAY_BUFFER)
+				});
+				offset += buf.byteLength;
+				if(offset%4 !== 0){
+					// the gltf standard wants every bufferView offset to be a multiple of 4 bytes.
+					// let's add empty bytes between bufferViews to comply with that.
+					bufferViews.push(new Uint8Array(4-offset%4));
+					offset += 4-offset%4;
+				}
+				
+				json.accessors.push({
+					bufferView: pointer,
+					byteOffset: 0,
+					type: "VEC2",
+					componentType: 5126,
+					count: mesh.primitives[p].texCoords.length/2
+				});
+				outMesh.primitives[p].attributes.TEXCOORD_0 = pointer;
+			}
 			
 			outMesh.primitives[p].material = 0; // todo: use materials
 		}
@@ -331,13 +360,12 @@ function buildNewFile(){
 		name: "default",
 		pbrMetallicRoughness: {
 			baseColorFactor: [0.8, 0.8, 0.8, 1],
-			metallicFactor: 0,
+			metallicFactor: 0.5,
 			roughnessFactor: 0.5
 		}
 	}
 	
 	/*======== create buffer ========*/
-	//let buffer = new Blob(bufferViews);
 	
 	console.log(json);
 	
@@ -395,14 +423,21 @@ function buildNewFile(){
 }
 
 function processScenes(){
+	let identityMatrix = [
+		1, 0, 0, 0,
+		0, 1, 0, 0,
+		0, 0, 1, 0,
+		0, 0, 0, 1
+	];
+	
 	for(let i in glb.scenes){
 		scenes[i] = {
-			nodes: processNodes(glb.scenes[i].nodes)
+			nodes: processNodes(glb.scenes[i].nodes, identityMatrix)
 		};
 	}
 }
 
-function processNodes(nodes){
+function processNodes(nodes, parentTransform){
 	let outNodes = [];
 	for(let n in nodes){
 		let node = {};
@@ -431,7 +466,9 @@ function processNodes(nodes){
 			}
 		}
 		
-		node.children = processNodes(glb.nodes[nodes[n]].children);
+		node.matrix = multiplyMatrices(parentTransform, node.matrix);
+		
+		node.children = processNodes(glb.nodes[nodes[n]].children, node.matrix);
 		outNodes.push(node);
 	}
 	return outNodes;
@@ -443,41 +480,6 @@ function flattenMeshes(){
 			flattenNodes(scenes[s].nodes[n]);
 		}
 	}
-}
-
-function transformPositions(positions, matrix, isNormal){
-	
-	let out = new Float32Array(positions.length);
-	
-	let v4 = 1.0;
-	if(isNormal){
-		v4 = 0.0;
-	}
-	
-	for(let i = 0; i < positions.length; i += 3){
-		let vec = [
-			positions[i  ],
-			positions[i+1],
-			positions[i+2],
-			v4
-		];
-		
-		let transformedVec = multiplyMatrixByVector(matrix, vec);
-		
-		if(isNormal){
-			transformedVec = normalizeVec4([transformedVec[0], transformedVec[1], transformedVec[2], 0.0]);
-		}
-		
-		out[i  ] = transformedVec[0];
-		out[i+1] = transformedVec[1];
-		out[i+2] = transformedVec[2];
-		
-		/*out[i  ] = positions[i+0];
-		out[i+1] = positions[i+1];
-		out[i+2] = positions[i+2];*/
-	}
-	
-	return out;
 }
 
 function flattenNodes(node){
@@ -509,6 +511,45 @@ function flattenNodes(node){
 	for(let c in node.children){
 		flattenNodes(node.children[c]);
 	}
+}
+
+function transformPositions(positions, matrix, isNormal){
+	
+	let out = new Float32Array(positions.length);
+	
+	let v4 = 1.0;
+	if(isNormal){
+		v4 = 0.0;
+	}
+	
+	for(let i = 0; i < positions.length; i += 3){
+		let vec = [
+			positions[i  ],
+			positions[i+1],
+			positions[i+2],
+			v4
+		];
+		
+		let transformedVec = multiplyMatrixByVector(matrix, vec);
+		
+		if(isNormal){
+			transformedVec = normalizeVec4([transformedVec[0], transformedVec[1], transformedVec[2], 0.0]);
+		}
+		
+		out[i  ] = transformedVec[0];
+		out[i+1] = transformedVec[1];
+		out[i+2] = transformedVec[2];
+		
+		if(!isNormal && transformedVec[3] != 1.0){
+			console.warn("vec4.w should be 1.0, but is "+transformedVec[3]);
+		}
+		
+		/*out[i  ] = positions[i+0];
+		out[i+1] = positions[i+1];
+		out[i+2] = positions[i+2];*/
+	}
+	
+	return out;
 }
 
 function processBuffers(){
