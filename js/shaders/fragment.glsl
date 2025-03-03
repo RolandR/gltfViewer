@@ -49,18 +49,18 @@ void main(void){
     
     vec3 vd = normalize(inverse(view)*viewDirection).xyz;
     
-    highp vec3 reflectedDirection = normalize(reflect(vd, normal));
+    //highp vec3 reflectedDirection = normalize(reflect(vd, normal));
     
     //vec4 skybox = textureLod(uSkyboxSampler, reflectedDirection, mix(1.0, 8.0, roughness));
     
     vec4 ambient = textureLod(uSkyboxSampler, normal, 8.0);
 
-	highp float directional = clamp(dot(directionalVector, normal)*3.0, 0.0, 1.0);
+	highp float directional = clamp(dot(directionalVector, normal)*2.0, 0.0, 1.0);
 	
     //lighting = ambientLight * 1.0 + (directionalLightColor * directional * 1.0);
 
 	//vec4 texColor = texture(uSampler, vTexCoord);
-	vec4 texColor = color*ambient + directional*directionalLightColor*color*1.0;
+	vec4 texColor = color*ambient*0.8 + directional*directionalLightColor*color*0.8;
 	
 	//texColor = mix(texColor, skybox, metallic);
 	

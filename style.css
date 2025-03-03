@@ -118,3 +118,16 @@ h2{
 h3{
 	font-size: 14px;
 }
+
+#frameCounter{
+	position: absolute;
+	bottom: 0px;
+	right: 0px;
+	width: 300px;
+	font-size: 40px;
+	color: #0f0;
+	font-family: monospace;
+	text-align: right;
+	text-shadow: #000 3px 3px;
+	margin: 20px;
+}

@@ -145,7 +145,21 @@ function finishProcessing(){
 	processScenes();
 	
 	flattenMeshes();
-	flatMeshes = [mergeMeshes(flatMeshes)];
+	
+	let newMeshes = [];
+	
+	for(let i in materials){
+		let materialMeshes = getMeshesByMaterial(materials[i].id);
+		if(materialMeshes.length > 0){
+			let materialMesh = mergeMeshes(materialMeshes);
+			materialMesh.primitives[0].material = materials[i].id;
+			newMeshes.push(materialMesh);
+		}
+	}
+	
+	flatMeshes = newMeshes;
+	
+	//flatMeshes = [mergeMeshes(flatMeshes)];
 	buildNewFile();
 	
 	setTimeout(function(){
@@ -342,7 +356,7 @@ function buildNewFile(){
 				outMesh.primitives[p].attributes.TEXCOORD_0 = pointer;
 			}
 			
-			outMesh.primitives[p].material = 0; // todo: use materials
+			outMesh.primitives[p].material = mesh.primitives[p].material;
 		}
 		
 		json.meshes.push(outMesh);
@@ -354,15 +368,9 @@ function buildNewFile(){
 		byteLength: bufferLength
 	};
 	
-	json.materials[0] = {
-		doubleSided: false,
-		name: "default",
-		pbrMetallicRoughness: {
-			baseColorFactor: [0.8, 0.8, 0.8, 1],
-			metallicFactor: 0.5,
-			roughnessFactor: 0.5
-		}
-	}
+	json.materials = materials;
+	
+	console.log(materials);
 	
 	/*======== create buffer ========*/
 	
@@ -502,6 +510,7 @@ function flattenNodes(node){
 			primitive.normals = transformPositions(mesh.processedPrimitives[p].normalView, modelMatrix, true);
 			primitive.texCoords = mesh.processedPrimitives[p].texCoordView;
 			
+			primitive.material = mesh.processedPrimitives[p].material;
 			
 			flatMesh.primitives.push(primitive);
 			
@@ -552,6 +561,11 @@ function transformPositions(positions, matrix, isNormal){
 	}
 	
 	return out;
+}
+
+function getMeshesByMaterial(materialId){
+	// Note: This only works properly if meshes have been split by primitives.
+	return flatMeshes.filter(function(mesh){return mesh.primitives[0].material == materialId});
 }
 
 function mergeMeshes(meshes){

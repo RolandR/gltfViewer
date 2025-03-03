@@ -33,8 +33,18 @@ let offsetY = 0;
 let cameraZ = 1.8;
 
 let outstandingImageCount = 0;
-
 let outstandingResourceCount = 0;
+
+const frameCounterEl = document.getElementById("frameCounter");
+let frameCounter = 0;
+
+setInterval(
+	function(){
+		frameCounterEl.innerHTML = frameCounter + " FPS";
+		frameCounter = 0;
+	},
+	1000
+);
 
 let skyboxTextures = {
 	up: null,
@@ -470,14 +480,36 @@ function processMeshes(){
 				}
 					
 				let positionAccessor = glb.accessors[mesh.primitives[p].attributes.POSITION];
+				
+				//console.log(positionAccessor.max);
+				
+				let sizes = [
+					positionAccessor.max[0] - positionAccessor.min[0],
+					positionAccessor.max[1] - positionAccessor.min[1],
+					positionAccessor.max[2] - positionAccessor.min[2]
+				]
+				
+				let maxSize = Math.max(...sizes);
+				
+				let offsets = [
+					(positionAccessor.max[0] + positionAccessor.min[0])/2,
+					(positionAccessor.max[1] + positionAccessor.min[1])/2,
+					(positionAccessor.max[2] + positionAccessor.min[2])/2
+				]
+				
+				console.log(sizes, offsets);
+				
 				let positionBufferView = glb.bufferViews[positionAccessor.bufferView];
 				let positionByteStride = 4*3; // 4 bytes for float32, *3 for VEC3
 				if(positionBufferView.byteStride){
 					positionByteStride = positionBufferView.byteStride;
 				}
 				let positionView = new Float32Array(positionBufferView.byteLength/4);
-				for(let i = 0; i < positionBufferView.byteLength/4; i++){
-					positionView[i] = positionBufferView.view.getFloat32(i*4, true);
+				for(let i = 0; i < positionBufferView.byteLength/4; i += 3){
+					for(let j = 0; j < 3; j++){
+						//positionView[i+j] = (positionBufferView.view.getFloat32((i+j)*4, true)-offsets[j])/maxSize;
+						positionView[i+j] = positionBufferView.view.getFloat32((i+j)*4, true);
+					}
 				}
 				
 				let normalAccessor = glb.accessors[mesh.primitives[p].attributes.NORMAL];
@@ -538,7 +570,7 @@ function processMeshes(){
 
 function render(){
 	
-	let fieldOfViewInRadians = 10/180*Math.PI;
+	let fieldOfViewInRadians = 40/180*Math.PI;
 	let aspectRatio = canvas.width/canvas.height;
 	let near = 0.001;
 	let far = 5;
@@ -627,8 +659,7 @@ function render(){
 	];*/
 	
 	gl.render(modelTransform, viewTransform, perspectiveTransform);
-	
-	angle += 0.01;
+	frameCounter++;
 	
 	requestAnimationFrame(render);
 }
