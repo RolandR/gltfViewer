@@ -131,3 +131,24 @@ h3{
 	text-shadow: #000 3px 3px;
 	margin: 20px;
 }
+
+#downloadButton{
+	color: #fff;
+	text-decoration: none;
+	border: 1px #000 solid;
+	margin: 10px;
+	display: block;
+	width: 150px;
+	height: 50px;
+	line-height: 48px;
+	text-align: center;
+	background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.1), rgba(0, 0, 0, 0.3));
+}
+
+#downloadButton:hover{
+	background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.0));
+}
+
+#downloadButton:active{
+	background-image: linear-gradient(to top, rgba(255, 255, 255, 0.1), rgba(0, 0, 0, 0.3));
+}

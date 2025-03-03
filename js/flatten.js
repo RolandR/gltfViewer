@@ -468,6 +468,7 @@ function buildNewFile(){
 	downloadLink.innerHTML = "Download GLB";
 	downloadLink.download = "output.glb";
 	downloadLink.href = objectUrl;
+	downloadLink.id = "downloadButton";
 	structureContainer.appendChild(downloadLink);
 	
 	
