@@ -1,10 +1,5 @@
 
-function Renderer(canvasId){
-
-	const canvas = document.getElementById(canvasId);
-	
-	canvas.width = document.getElementById("canvasContainer").clientWidth;
-	canvas.height = document.getElementById("canvasContainer").clientHeight;
+function Renderer(canvas, shaderTexts){
 	
 	const gl = canvas.getContext("webgl2", {premultipliedAlpha: false, preserveDrawingBuffer: false});
 
@@ -27,6 +22,8 @@ function Renderer(canvasId){
 	let roughnessRef;
 	let metallicRef;
 	let cameraZRef;
+	
+	let cameraZ = 1.8;
 	
 	let samplerRef;
 	let normalSamplerRef;
@@ -303,6 +300,8 @@ function Renderer(canvasId){
 		gl.uniformMatrix4fv(perspectiveRef, false, perspective);
 		gl.uniform1f(aspectRef, canvas.width/canvas.height);
 		gl.uniform1f(cameraZRef, cameraZ);
+		
+		//console.log(scene);
 		
 		for(let n in scene.nodes){
 			renderNode(scene.nodes[n], model);

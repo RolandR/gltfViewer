@@ -10,11 +10,7 @@
 	<body>
 	<body>
 		<input type="file" id="fileUpload" accept=".glb">
-		<input type="range" id="cameraZInput" min="-3" max="3" step="0.001" value="1.8">
-		<input type="range" id="offsetYInput" min="-1" max="1" step="0.01" value="0">
-		<div id="frameCounter">0 FPS</div>
 		<div id="canvasContainer">
-			<canvas id="renderCanvas"></canvas>
 		</div>
 		<div id="imagesContainer">
 		</div>
@@ -29,6 +25,9 @@
 	</body>
 	<script type="text/javascript" src="./js/gltf.js"></script>
 	<script type="text/javascript" src="./js/matrix.js"></script>
+	<script type="text/javascript" src="./js/loadFile.js"></script>
+	<script type="text/javascript" src="./js/glbParser.js"></script>
 	<script type="text/javascript" src="./js/gl.js"></script>
 	<script type="text/javascript" src="./js/viewer.js"></script>
+	<script type="text/javascript" src="./js/mainViewer.js"></script>
 </html>
