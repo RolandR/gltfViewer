@@ -470,13 +470,28 @@ function processMeshes(){
 				
 				let indexAccessor = glb.accessors[mesh.primitives[p].indices];
 				let indexBufferView = glb.bufferViews[indexAccessor.bufferView];
-				let indexByteStride = 4; // 2 bytes for Uint16
+				
+				let indexByteStride;
+				let indexView;
+				
+				if(gltfEnums.dataTypes[indexAccessor.componentType] == "UNSIGNED_SHORT"){
+					indexByteStride = 2; // 2 bytes for Uint16
+					indexView = new Uint16Array(indexBufferView.byteLength/2);
+					for(let i = 0; i < indexBufferView.byteLength/2; i++){
+						indexView[i] = indexBufferView.view.getUint16(i*2, true);
+					}
+				} else if(gltfEnums.dataTypes[indexAccessor.componentType] == "UNSIGNED_INT"){
+					indexByteStride = 4; // 4 bytes for Uint32
+					indexView = new Uint32Array(indexBufferView.byteLength/4);
+					for(let i = 0; i < indexBufferView.byteLength/4; i++){
+						indexView[i] = indexBufferView.view.getUint32(i*4, true);
+					}
+				} else {
+					console.error("Unsupported component type for indices: "+gltfEnums.dataTypes[indexAccessor.componentType]);
+				}
+				
 				if(indexBufferView.byteStride){
 					indexByteStride = indexBufferView.byteStride;
-				}
-				let indexView = new Uint32Array(indexBufferView.byteLength/2);
-				for(let i = 0; i < indexBufferView.byteLength/4; i++){
-					indexView[i] = indexBufferView.view.getUint32(i*4, true);
 				}
 					
 				let positionAccessor = glb.accessors[mesh.primitives[p].attributes.POSITION];
@@ -525,6 +540,7 @@ function processMeshes(){
 				
 				let texCoordView;
 				let texCoordByteStride;
+				let texCoordComponentType;
 				
 				if(mesh.primitives[p].attributes.TEXCOORD_0 !== undefined){
 					let texCoordAccessor = glb.accessors[mesh.primitives[p].attributes.TEXCOORD_0]; //note: this isn't necessarily always TEXCOORD_0. In this case, we'd fall flat on our face.
@@ -537,22 +553,29 @@ function processMeshes(){
 					for(let i = 0; i < texCoordBufferView.byteLength/4; i++){
 						texCoordView[i] = texCoordBufferView.view.getFloat32(i*4, true);
 					}
+					texCoordComponentType = texCoordAccessor.componentType;
 				} else {
 					//console.warn("TEXCOORD_0 is undefined:");
 					//console.warn(mesh.primitives[p].attributes);
 					texCoordView = new Float32Array(indexBufferView.byteLength/4);
 					texCoordByteStride = 4*2;
+					texCoordComponentType = 5126;
+					
 				}
 				
 				primitives.push({
 					indexView: indexView,
 					indexByteStride: indexByteStride,
+					indexComponentType: indexAccessor.componentType,
 					positionView: positionView,
 					positionByteStride: positionByteStride,
+					positionComponentType: positionAccessor.componentType,
 					normalView: normalView,
 					normalByteStride: normalByteStride,
+					normalComponentType: normalAccessor.componentType,
 					texCoordView: texCoordView,
 					texCoordByteStride: texCoordByteStride,
+					texCoordComponentType: texCoordComponentType,
 					material: mesh.primitives[p].material
 				});
 			}

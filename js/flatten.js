@@ -175,7 +175,7 @@ function finishProcessing(){
 		nodes: []
 	};
 	
-	for(let s in storeys){
+	/*for(let s in storeys){
 		newNodes[s] = {
 			name: storeys[s],
 			children: []
@@ -200,6 +200,24 @@ function finishProcessing(){
 				});
 				newNodes[s].children.push(newNodes.length-1);
 			}
+		}
+	}*/
+	
+	for(let mat in materials){
+		let materialMeshes = getMeshesByMaterial(flatMeshes, mat);
+		if(materialMeshes.length > 0){
+			let materialName = materials[mat].name;
+			let materialMesh = mergeMeshes(materialMeshes, materialName);
+			materialMesh.primitives[0].material = mat;
+			newMeshes.push(materialMesh);
+			
+			newNodes.push({
+				name: materialName,
+				mesh: newMeshes.length-1
+			});
+			newScene.nodes.push(newNodes.length-1);
+		} else {
+			console.error("no meshes found?");
 		}
 	}
 	

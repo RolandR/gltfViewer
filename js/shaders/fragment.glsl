@@ -59,10 +59,12 @@ void main(void){
 	
     //lighting = ambientLight * 1.0 + (directionalLightColor * directional * 1.0);
 
-	//vec4 texColor = texture(uSampler, vTexCoord);
-	vec4 texColor = color*ambient*0.8 + directional*directionalLightColor*color*0.8;
+	vec4 texColor = texture(uSampler, vTexCoord);
 	
-	texColor = mix(texColor, skybox, metallic);
+	
+	vec4 outColor = texColor*ambient*0.8 + directional*directionalLightColor*texColor*0.8;
+	
+	outColor = mix(skybox, texColor, metallic);
 	
 	//texColor.rgb = mix(skybox.rgb, texColor.rgb, 0.1);
 
@@ -71,6 +73,6 @@ void main(void){
 	
 	
 	//fragColor = vec4(texColor.xyz, texColor.a);
-	fragColor = vec4(texColor.rgb, color.a);
+	fragColor = vec4(outColor.rgb, texColor.a);
 	
 }

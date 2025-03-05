@@ -7,6 +7,34 @@ function Renderer(canvasId){
 	canvas.height = document.getElementById("canvasContainer").clientHeight;
 	
 	const gl = canvas.getContext("webgl2", {premultipliedAlpha: false, preserveDrawingBuffer: false});
+	
+	const gltfEnums = {
+		dataTypes: {
+			"5120": gl.BYTE,
+			"5121": gl.UNSIGNED_BYTE,
+			"5122": gl.SHORT,
+			"5123": gl.UNSIGNED_SHORT,
+			"5125": gl.UNSIGNED_INT,
+			"5126": gl.FLOAT,
+		},
+		filters: {
+			"9728": gl.NEAREST,
+			"9729": gl.LINEAR,
+			"9984": gl.NEAREST_MIPMAP_NEAREST,
+			"9985": gl.LINEAR_MIPMAP_NEAREST,
+			"9986": gl.NEAREST_MIPMAP_LINEAR,
+			"9987": gl.LINEAR_MIPMAP_LINEAR
+		},
+		wrappingModes: {
+			"33071": gl.CLAMP_TO_EDGE,
+			"33648": gl.MIRRORED_REPEAT,
+			"10497": gl.REPEAT
+		},
+		bufferViewTargets: {
+			"34962": gl.ARRAY_BUFFER,
+			"34963": gl.ELEMENT_ARRAY_BUFFER
+		}
+	}
 
 	let shaderProgram;
 	let skyboxShaderProgram;
@@ -175,6 +203,7 @@ function Renderer(canvasId){
 				 vertices: vertices
 				,normals: normals
 				,indices: indices
+				,indexComponentType: mesh.primitives[p].indexComponentType
 				,texCoords: texCoords
 				,vertexBuffer: gl.createBuffer()
 				,normalsBuffer: gl.createBuffer()
@@ -187,21 +216,45 @@ function Renderer(canvasId){
 			gl.bindBuffer(gl.ARRAY_BUFFER, primitive.vertexBuffer);
 			gl.bufferData(gl.ARRAY_BUFFER, primitive.vertices, gl.STATIC_DRAW);
 			let coord = gl.getAttribLocation(shaderProgram, "coordinates");
-			gl.vertexAttribPointer(coord, 3, gl.FLOAT, false, mesh.primitives[p].positionByteStride, 0);
+			gl.vertexAttribPointer(
+				coord,
+				3,
+				mesh.primitives[p].positionComponentType,
+				false,
+				mesh.primitives[p].positionByteStride,
+				0
+			);
 			gl.enableVertexAttribArray(coord);
 			if(coord == -1) console.error(coord);
 			
 			gl.bindBuffer(gl.ARRAY_BUFFER, primitive.normalsBuffer);
 			gl.bufferData(gl.ARRAY_BUFFER, primitive.normals, gl.STATIC_DRAW);
 			let normal = gl.getAttribLocation(shaderProgram, "vertexNormal");
-			gl.vertexAttribPointer(normal, 3, gl.FLOAT, false, mesh.primitives[p].normalByteStride, 0);
+			gl.vertexAttribPointer(
+				normal,
+				3,
+				mesh.primitives[p].normalComponentType,
+				false,
+				mesh.primitives[p].normalByteStride,
+				0
+			);
 			gl.enableVertexAttribArray(normal);
 			if(normal == -1) console.error(primitive);
+			
+			//console.log(gltfEnums.dataTypes[mesh.primitives[p].texCoordComponentType]);
+			//console.log(gltfEnums.dataTypes);
 			
 			gl.bindBuffer(gl.ARRAY_BUFFER, primitive.texCoordBuffer);
 			gl.bufferData(gl.ARRAY_BUFFER, primitive.texCoords, gl.STATIC_DRAW);
 			let texCoord = gl.getAttribLocation(shaderProgram, "texCoord");
-			gl.vertexAttribPointer(texCoord, 2, gl.FLOAT, false, mesh.primitives[p].texCoordByteStride, 0);
+			gl.vertexAttribPointer(
+				texCoord,
+				2,
+				mesh.primitives[p].texCoordComponentType,
+				false,
+				mesh.primitives[p].texCoordByteStride,
+				0
+			);
 			gl.enableVertexAttribArray(texCoord);
 			if(texCoord == -1) console.error(texCoord);
 			
@@ -388,7 +441,12 @@ function Renderer(canvasId){
 		
 		//console.log(mesh.name);
 		//console.log(primitive);
-		gl.drawElements(gl.TRIANGLES, primitive.size, gl.UNSIGNED_INT, 0);
+		gl.drawElements(
+			gl.TRIANGLES,
+			primitive.size,
+			primitive.indexComponentType,
+			0
+		);
 	}
 	
 	function renderTransparentPrimitives(){
