@@ -7,34 +7,6 @@ function Renderer(canvasId){
 	canvas.height = document.getElementById("canvasContainer").clientHeight;
 	
 	const gl = canvas.getContext("webgl2", {premultipliedAlpha: false, preserveDrawingBuffer: false});
-	
-	const gltfEnums = {
-		dataTypes: {
-			"5120": gl.BYTE,
-			"5121": gl.UNSIGNED_BYTE,
-			"5122": gl.SHORT,
-			"5123": gl.UNSIGNED_SHORT,
-			"5125": gl.UNSIGNED_INT,
-			"5126": gl.FLOAT,
-		},
-		filters: {
-			"9728": gl.NEAREST,
-			"9729": gl.LINEAR,
-			"9984": gl.NEAREST_MIPMAP_NEAREST,
-			"9985": gl.LINEAR_MIPMAP_NEAREST,
-			"9986": gl.NEAREST_MIPMAP_LINEAR,
-			"9987": gl.LINEAR_MIPMAP_LINEAR
-		},
-		wrappingModes: {
-			"33071": gl.CLAMP_TO_EDGE,
-			"33648": gl.MIRRORED_REPEAT,
-			"10497": gl.REPEAT
-		},
-		bufferViewTargets: {
-			"34962": gl.ARRAY_BUFFER,
-			"34963": gl.ELEMENT_ARRAY_BUFFER
-		}
-	}
 
 	let shaderProgram;
 	let skyboxShaderProgram;
@@ -220,6 +192,8 @@ function Renderer(canvasId){
 				coord,
 				3,
 				mesh.primitives[p].positionComponentType,
+				// ^^^ This works because the values specified in the GLTF standard
+				//     correspond exactly to the WebGL enum values
 				false,
 				mesh.primitives[p].positionByteStride,
 				0
