@@ -114,14 +114,15 @@ function ProgressMonitor(container, options){
 		
 		activeCount = parseFloat(newCount);
 		
-		if(activeCountEl && activeTotalCountEl){
-			activeCountEl.innerHTML = " ("+activeCount+"/";
-			activeTotalCountEl.innerHTML = activeTotalCount+")";
-		}
-		
-		setProgress(activeCount/activeTotalCount);
-		
 		if(activeCount%updateCountStep == 0 || activeCount == updateCountStep){
+			
+			if(activeCountEl && activeTotalCountEl){
+				activeCountEl.innerHTML = " ("+activeCount+"/";
+				activeTotalCountEl.innerHTML = activeTotalCount+")";
+			}
+			
+			setProgress(activeCount/activeTotalCount);
+			
 			return new Promise((resolve) => {
 				setTimeout(resolve, 0);
 			});
