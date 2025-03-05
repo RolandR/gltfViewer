@@ -15,17 +15,18 @@ body{
 	font-size: 14px;
 }
 
-#loadingStatus{
-	display: none;
+.loadingStatus{
+	display: flex;
+	flex-direction: column;
 	position: absolute;
 	width: 400px;
 	text-align: left;
 	padding: 30px;
-	height: 230px;
+	height: 300px;
 	left: 50%;
 	margin-left: -200px;
 	top: 30%;
-	background-color: #333333;
+	background-color: #333;
 	border: 1px #111111 solid;
 	opacity: 1;
 	transition: opacity;
@@ -33,26 +34,102 @@ body{
 	transition-timing-function: ease-in;
 }
 
-#loadingStatus.fading{
+.loadingStatus.fading{
 	opacity: 0;
 }
 
-#loadingBarContainer{
+.progressTitle{
+	display: block;
+	font-size: 20px;
+	margin-bottom: 15px;
+}
+
+.loadingBarContainer{
 	height: 15px;
 	background-color: #292929;
 	border: 1px #111111 solid;
 	width: 100%;
-	margin-bottom: 20px;
+	margin-bottom: 15px;
 }
 
-#loadingBar{
+.loadingBar{
 	width: 0%;
 	height: 100%;
-	background-color: #FFAA00;
+	background-color: #fa0;
 	background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0), rgba(0, 0, 0, 0.4));
-	transition: width;
+	/*transition: width;
 	transition-duration: 250ms;
-	transition-timing-function: linear;
+	transition-timing-function: linear;*/
+}
+
+.progressItemsContainer{
+	display: flex;
+	justify-content: space-between;
+	flex-direction: row;
+	width: 100%;
+	margin-bottom: 15px;
+}
+
+.progressItem{
+	border: 1px #000 solid;
+	height: 30px;
+	width: 30px;
+	background-color: #292929;
+}
+
+.progressItem.active{
+	border: 1px #000 solid;
+	background-color: #715a2d;
+	animation: 1s infinite alternate linear pulsate;
+}
+
+@keyframes pulsate {
+	from {
+		background-color: #715a2d;
+		box-shadow: rgba(255, 255, 255, 0.2) 0px 0px 0px;
+	}
+
+	to {
+		background-color: #9b7a37;
+		box-shadow: rgba(255, 255, 255, 0.4) 0px 0px 10px;
+	}
+}
+
+.progressItem.done{
+	border: 1px #000 solid;
+	background-color: #fa0;
+	background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0), rgba(0, 0, 0, 0.4));
+}
+
+.loadingContent{
+	overflow-y: auto;
+}
+
+.progressMessage{
+	display: block;
+}
+
+.progressMessage.info{
+	color: #888;
+}
+
+.progressMessage.info:first-child{
+	color: #fff;
+}
+
+.progressMessage.warn{
+	color: #fa0;
+}
+
+.progressMessage.error{
+	color: #f33;
+	font-weight: bold;
+}
+
+.progressMessage.success{
+	color: #fff;
+	font-weight: bold;
+	margin-bottom: 10px;
 }
 
 #canvasContainer{
@@ -80,7 +157,7 @@ body{
 	top: 60px;
 }
 
-#structureContainer{
+/*#structureContainer{
 	padding-top: 40px;
 }
 
@@ -117,7 +194,7 @@ h2{
 
 h3{
 	font-size: 14px;
-}
+}*/
 
 #frameCounter{
 	position: absolute;

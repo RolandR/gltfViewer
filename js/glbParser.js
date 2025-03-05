@@ -1,46 +1,39 @@
 
 
-function GlbParser(){
+function GlbParser(pMon){
 	
 	let originalJson = {};
 	let glb = {};
 	
 	const imagesContainer = document.getElementById("imagesContainer");
 	
+	let nodesProcessed = 0;
 	
 	async function loadFile(file){
 		
-		const loadingStatus = document.getElementById("loadingStatus");
-		const loadingContent = document.getElementById("loadingContent");
-		const loadingBar = document.getElementById("loadingBar");
-		
-		loadingStatus.className = "";
-		loadingBar.style.width = "0%";
-		loadingStatus.style.display = "block";
-		loadingContent.innerHTML = "Loading...<br>";
-		
 		const reader = new FileReader();
 		
+		await pMon.start();
+		await pMon.postMessage("Loading file from disk...");
+		
 		reader.addEventListener("progress", function(e){
-			let progress = ~~((e.loaded/e.total)*60);
-			
-			loadingBar.style.width = progress+"%";
+			let progress = e.loaded/e.total;
+			pMon.updateProgress(progress);
 		});
 		
 		let readFile = new Promise((resolve, reject) => {
 			reader.onload = function(){
-			
-				loadingContent.innerHTML += "<br>File uploaded, processing...";
-				loadingBar.style.width = "60%";
-				let result = reader.result;
-				
-				resolve(result);
+				resolve(reader.result);
 			};
 		});
 		
 		reader.readAsArrayBuffer(file);
 		
 		let loadedFile = await readFile;
+		
+		await pMon.updateProgress(1);
+		await pMon.finishItem();
+		await pMon.postMessage("Processing file...");
 		
 		await processFile(loadedFile);
 		
@@ -52,6 +45,9 @@ function GlbParser(){
 	}
 
 	async function processFile(file){
+		
+		await pMon.postMessage("Decoding...");
+		
 		console.log(file);
 		let view = new DataView(file);
 		const decoder = new TextDecoder();
@@ -85,9 +81,13 @@ function GlbParser(){
 		if(jsonText){
 			originalJson = JSON.parse(jsonText);
 			glb = JSON.parse(jsonText);
-			console.log(glb);
+			
+			console.log("Original JSON: "+originalJson);
+			console.log("Processed JSON: "+glb);
+			
 		} else {
 			console.error("aint no json text; aborting");
+			await pMon.postMessage("Error: No JSON text found", "error");
 			return;
 		}
 		
@@ -95,26 +95,33 @@ function GlbParser(){
 			glb.buffers[b].bufferData = binaryBuffers[b];
 		}
 		
+		await pMon.postMessage("Processing bufferViews...");
 		processBufferViews();
-		await processImages();
-		processMaterials();
-		processMeshes();
-		processScenes();
 		
-		setTimeout(function(){
-			loadingStatus.className = "fading";
-			setTimeout(function(){
-				loadingStatus.style.display = "none";
-			}, 500);
-		}, 100);
+		await processImages();
+		
+		await pMon.finishItem();
+		await pMon.postMessage("Processing materials...");
+		processMaterials();
+		
+		await processMeshes();
+		
+		await pMon.finishItem();
+		
+		await processScenes();
+		
+		
 		
 		return;
 	}
 
-	function processScenes(){
+	async function processScenes(){
+		
+		await pMon.postMessage("Processing scene nodes...", "info", glb.nodes.length);
+		
 		for(let i in glb.scenes){
 			glb.scenes[i] = {
-				nodes: processNodes(glb.scenes[i].nodes)
+				nodes: await processNodes(glb.scenes[i].nodes)
 			};
 		}
 		
@@ -124,7 +131,7 @@ function GlbParser(){
 		
 	}
 
-	function processNodes(nodes){
+	async function processNodes(nodes){
 		let outNodes = [];
 		for(let n in nodes){
 			let node = {};
@@ -152,7 +159,11 @@ function GlbParser(){
 					node.matrix = multiplyMatrices(node.matrix, makeScaleMatrix(glb.nodes[nodes[n]].scale));
 				}
 			}
-			node.children = processNodes(glb.nodes[nodes[n]].children);
+			
+			nodesProcessed++;
+			await pMon.updateCount(nodesProcessed);
+			
+			node.children = await processNodes(glb.nodes[nodes[n]].children);
 			outNodes.push(node);
 			
 		}
@@ -171,7 +182,11 @@ function GlbParser(){
 		let promises = [];
 		
 		if(glb.images){
+			await pMon.postMessage("Processing images...", "info", glb.images.length);
+			
 			for(let i in glb.images){
+				i = parseInt(i);
+				
 				let img = glb.images[i];
 				let imageData = new Blob([glb.bufferViews[img.bufferView].view], {type: img.mimeType});
 				let imageUrl = URL.createObjectURL(imageData);
@@ -187,10 +202,10 @@ function GlbParser(){
 				imgEl.src = imageUrl;
 				img.image = imgEl;
 				
-				//images[i] = imgEl;
+				await pMon.updateCount(i+1);
 			}
 		} else {
-			
+			await pMon.postMessage("This file contains no images.");
 		}
 		
 		return Promise.allSettled(promises);
@@ -271,9 +286,13 @@ function GlbParser(){
 		}
 	}
 
-	function processMeshes(){
+	async function processMeshes(){
 		if(glb.meshes){
+			await pMon.postMessage("Processing meshes...", "info", glb.meshes.length);
+			
 			for(let m in glb.meshes){
+				m = parseInt(m);
+				
 				let mesh = glb.meshes[m];
 				let primitives = [];
 				
@@ -392,8 +411,14 @@ function GlbParser(){
 				}
 				
 				mesh.processedPrimitives = primitives;
+				
+				await pMon.updateCount(m+1);
 			}
+		} else {
+			await pMon.postMessage("This file contains no meshes!", "warn");
 		}
+		
+		return;
 	}
 	
 	return {

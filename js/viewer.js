@@ -1,5 +1,10 @@
 
 function Viewer(canvasContainer, options){
+	
+	const pMon = new ProgressMonitor(document.body, {
+		itemsCount: 5,
+		title: "Loading .glb file..."
+	});
 
 	const canvas = document.createElement("canvas");
 	canvas.id = "renderCanvas";
@@ -10,7 +15,7 @@ function Viewer(canvasContainer, options){
 
 	let gl;
 	let shaderTexts = {};
-	let parser = new GlbParser();
+	let parser = new GlbParser(pMon);
 	let glb = {};
 
 	let angle = 0;
@@ -66,6 +71,9 @@ function Viewer(canvasContainer, options){
 	
 	async function sendFileToGl(glb){
 		
+		await pMon.finishItem();
+		await pMon.postMessage("Preparing WebGL context...");
+		
 		let json = glb.json;
 		
 		gl.addScene(json.scenes[json.scene]);
@@ -87,7 +95,11 @@ function Viewer(canvasContainer, options){
 			gl.addMaterial(json.materials[m]);
 		}
 		
+		await pMon.postMessage("Preparing meshes for render...", "info", json.meshes.length);
+		
 		for(let m in json.meshes){
+			m = parseInt(m);
+			
 			let mesh = json.meshes[m];
 			let outMesh = {
 				id: m,
@@ -96,7 +108,11 @@ function Viewer(canvasContainer, options){
 			}
 			
 			gl.addMesh(outMesh);
+			await pMon.updateCount(m+1);
 		}
+		
+		await pMon.postMessage("Done!", "success");
+		await pMon.finish(0, 500);
 		
 		render();
 		
