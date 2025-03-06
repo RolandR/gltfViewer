@@ -81,14 +81,7 @@ function Viewer(canvasContainer, options){
 		for(let t in json.textures){
 			let tex = json.textures[t];
 			
-			let sampler = json.samplers[tex.sampler];
-			let img = json.images[tex.source].image;
-			
-			gl.addTexture({
-				id: t,
-				img: img,
-				sampler: sampler
-			});
+			gl.addTexture(tex);
 		}
 		
 		for(let m in json.materials){

@@ -82,8 +82,10 @@ function GlbParser(pMon){
 			originalJson = JSON.parse(jsonText);
 			glb = JSON.parse(jsonText);
 			
-			console.log("Original JSON: "+originalJson);
-			console.log("Processed JSON: "+glb);
+			console.log("Original JSON:");
+			console.log(originalJson);
+			console.log("Processed JSON:");
+			console.log(glb);
 			
 		} else {
 			console.error("aint no json text; aborting");
@@ -99,6 +101,7 @@ function GlbParser(pMon){
 		processBufferViews();
 		
 		await processImages();
+		processTextures();
 		
 		await pMon.finishItem();
 		await pMon.postMessage("Processing materials...");
@@ -219,6 +222,26 @@ function GlbParser(pMon){
 		
 		return Promise.allSettled(promises);
 	}
+	
+	function processTextures(){
+		if(glb.textures === undefined){
+			glb.textures = [];
+		}
+		if(glb.samplers === undefined){
+			glb.samplers = [{
+				magFilter: 9729,
+				minFilter: 9987
+			}];
+		}
+		
+		for(let t in glb.textures){
+			let tex = glb.textures[t];
+			
+			tex.id = t;
+			tex.samp = glb.samplers[tex.sampler];
+			tex.img = glb.images[tex.source].image;
+		}
+	}
 
 	function processMaterials(){
 		if(glb.materials){
@@ -229,10 +252,10 @@ function GlbParser(pMon){
 					id: m,
 					name: "default",
 					pbrMetallicRoughness: {
-						baseColorTexture: {
+						/*baseColorTexture: {
 							index: 0,
 							texCoord: 0
-						},
+						},*/
 						baseColorFactor: [1, 1, 1, 1],
 						metallicFactor: 1,
 						roughnessFactor: 1
@@ -251,13 +274,36 @@ function GlbParser(pMon){
 					material.name = mat.name;
 				}
 				if(mat.pbrMetallicRoughness){
-					if(mat.pbrMetallicRoughness.baseColorTexture){
+					if(mat.pbrMetallicRoughness.baseColorTexture !== undefined){
+						material.pbrMetallicRoughness.baseColorTexture = mat.pbrMetallicRoughness.baseColorTexture;
 						if(mat.pbrMetallicRoughness.baseColorTexture.index){
 							material.pbrMetallicRoughness.baseColorTexture.index = mat.pbrMetallicRoughness.baseColorTexture.index;
 						}
 						if(mat.pbrMetallicRoughness.baseColorTexture.texCoord){
 							material.pbrMetallicRoughness.baseColorTexture.texCoord = mat.pbrMetallicRoughness.baseColorTexture.texCoord;
 						}
+					} else {
+						
+						let colors = [0, 255, 0, 255];
+						if(mat.pbrMetallicRoughness.baseColorFactor){
+							colors = mat.pbrMetallicRoughness.baseColorFactor.map((i) => i*255);
+						}
+						
+						glb.textures.push({
+							isFakeTexture: true,
+							img: new Uint8Array(colors),
+							sampler: 0,
+							samp: glb.samplers[0]
+						});
+						
+						let texId = glb.textures.length-1;
+						glb.textures[texId].id = texId;
+						
+						material.pbrMetallicRoughness.baseColorTexture = {
+							index: texId,
+							texCoord: 0
+						}
+						
 					}
 					if(mat.pbrMetallicRoughness.baseColorFactor){
 						material.pbrMetallicRoughness.baseColorFactor = mat.pbrMetallicRoughness.baseColorFactor;

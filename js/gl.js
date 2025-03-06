@@ -159,18 +159,12 @@ function Renderer(canvas, shaderTexts){
 		
 		for(let p in mesh.primitives){
 			
-			//console.log(mesh.primitives[p].positionView);
-			
 			let vertices = mesh.primitives[p].positionView;
 			let normals = mesh.primitives[p].normalView;
 			let indices = mesh.primitives[p].indexView;
 			let texCoords = mesh.primitives[p].texCoordView;
 			
-			//console.log(indices.length);
-			
 			let size = indices.length;
-			
-			//console.log(materials[mesh.primitives[p].material]);
 			
 			let primitive = {
 				 vertices: vertices
@@ -216,9 +210,6 @@ function Renderer(canvas, shaderTexts){
 			gl.enableVertexAttribArray(normal);
 			if(normal == -1) console.error(primitive);
 			
-			//console.log(gltfEnums.dataTypes[mesh.primitives[p].texCoordComponentType]);
-			//console.log(gltfEnums.dataTypes);
-			
 			gl.bindBuffer(gl.ARRAY_BUFFER, primitive.texCoordBuffer);
 			gl.bufferData(gl.ARRAY_BUFFER, primitive.texCoords, gl.STATIC_DRAW);
 			let texCoord = gl.getAttribLocation(shaderProgram, "texCoord");
@@ -235,8 +226,6 @@ function Renderer(canvas, shaderTexts){
 			
 			gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, primitive.indexBuffer);
 			gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, primitive.indices, gl.STATIC_DRAW);
-			
-			//console.log(primitive.vertices.length/3, primitive.normals.length/3, primitive.texCoords.length/2, primitive.indices.length);
 			
 			primitives.push(primitive);
 		}
@@ -259,20 +248,33 @@ function Renderer(canvas, shaderTexts){
 	function addTexture(tex){
 		textures[tex.id] = gl.createTexture();
 		gl.bindTexture(gl.TEXTURE_2D, textures[tex.id]);
-		gl.texImage2D(
-			gl.TEXTURE_2D,
-			0,
-			gl.RGBA,
-			//tex.img.width,
-			//tex.img.height,
-			//0,
-			gl.RGBA,
-			gl.UNSIGNED_BYTE,
-			tex.img
-		);
-		//console.log(tex.img.width);
+		
+		if(tex.isFakeTexture){
+			gl.texImage2D(
+				gl.TEXTURE_2D,
+				0,
+				gl.RGBA,
+				1,
+				1,
+				0,
+				gl.RGBA,
+				gl.UNSIGNED_BYTE,
+				tex.img
+			);
+		} else {
+			gl.texImage2D(
+				gl.TEXTURE_2D,
+				0,
+				gl.RGBA,
+				//tex.img.width,
+				//tex.img.height,
+				//0,
+				gl.RGBA,
+				gl.UNSIGNED_BYTE,
+				tex.img
+			);
+		}
 		gl.generateMipmap(gl.TEXTURE_2D);
-		//gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
 		
 	}
 	
@@ -306,8 +308,6 @@ function Renderer(canvas, shaderTexts){
 		gl.uniform1f(aspectRef, canvas.width/canvas.height);
 		gl.uniform1f(cameraZRef, cameraZ);
 		
-		//console.log(scene);
-		
 		for(let n in scene.nodes){
 			renderNode(scene.nodes[n]);
 		}
@@ -336,7 +336,7 @@ function Renderer(canvas, shaderTexts){
 	}
 	
 	function renderNode(node){
-		//console.log(localTransform);
+		
 		if(node.mesh !== undefined){
 			let mesh = meshes[node.mesh];
 			for(let p in mesh.primitives){
@@ -408,16 +408,9 @@ function Renderer(canvas, shaderTexts){
 		gl.uniform1f(emissiveRef, 0);
 		
 		gl.uniformMatrix4fv(nodeModelRef, false, transform);
-		//let localNormalMatrix = normalMatrix(transform);
-		//gl.uniformMatrix4fv(normalTransformRef, false, localNormalMatrix);
-		
 		
 		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, primitive.indexBuffer);
 		
-		//console.log(gl.getProgramInfoLog(shaderProgram));
-		
-		//console.log(mesh.name);
-		//console.log(primitive);
 		gl.drawElements(
 			gl.TRIANGLES,
 			primitive.size,
