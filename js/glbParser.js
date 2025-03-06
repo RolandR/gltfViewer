@@ -299,6 +299,7 @@ function GlbParser(pMon){
 						if(mat.pbrMetallicRoughness.baseColorTexture.texCoord){
 							material.pbrMetallicRoughness.baseColorTexture.texCoord = mat.pbrMetallicRoughness.baseColorTexture.texCoord;
 						}
+						glb.textures[material.pbrMetallicRoughness.baseColorTexture.index].type = "colors";
 					} else {
 						
 						let colors = [0, 255, 0, 255];
@@ -310,7 +311,8 @@ function GlbParser(pMon){
 							isFakeTexture: true,
 							img: new Uint8Array(colors),
 							sampler: 0,
-							samp: glb.samplers[0]
+							samp: glb.samplers[0],
+							type: "colors"
 						});
 						
 						let texId = glb.textures.length-1;
@@ -335,11 +337,36 @@ function GlbParser(pMon){
 				if(mat.emissiveFactor){
 					material.emissiveFactor = mat.emissiveFactor;
 				}
-				/*if(mat.normalTexture){
-					if(mat.normalTexture.id){
-						
+				if(mat.normalTexture !== undefined){
+					material.normalTexture = mat.normalTexture;
+					if(mat.normalTexture.index !== undefined){
+						material.normalTexture.index = mat.normalTexture.index;
 					}
-				}*/
+					if(mat.normalTexture.texCoord !== undefined){
+						material.normalTexture.texCoord = mat.normalTexture.texCoord;
+					}
+					glb.textures[material.normalTexture.index].type = "normal";
+				} else {
+					
+					let flatNormals = [128, 128, 255];
+					
+					glb.textures.push({
+						isFakeTexture: true,
+						img: new Uint8Array(flatNormals),
+						sampler: 0,
+						samp: glb.samplers[0],
+						type: "normal"
+					});
+					
+					let texId = glb.textures.length-1;
+					glb.textures[texId].id = texId;
+					
+					material.normalTexture = {
+						index: texId,
+						texCoord: 0
+					}
+				}
+				
 				if(mat.alphaMode){
 					material.alphaMode = mat.alphaMode;
 				}

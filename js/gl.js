@@ -25,6 +25,7 @@ function Renderer(canvas, shaderTexts){
 	let roughnessRef;
 	let metallicRef;
 	let cameraZRef;
+	let timeRef;
 	
 	let cameraZ = 1.8;
 	
@@ -84,6 +85,8 @@ function Renderer(canvas, shaderTexts){
 		aspectRef = gl.getUniformLocation(shaderProgram, "aspect");
 		colorRef = gl.getUniformLocation(shaderProgram, "color");
 		cameraZRef = gl.getUniformLocation(shaderProgram, "cameraZ");
+		timeRef = gl.getUniformLocation(shaderProgram, "time");
+		
 		emissiveRef = gl.getUniformLocation(shaderProgram, "emissive");
 		roughnessRef = gl.getUniformLocation(shaderProgram, "roughness");
 		metallicRef = gl.getUniformLocation(shaderProgram, "metallic");
@@ -249,15 +252,20 @@ function Renderer(canvas, shaderTexts){
 		textures[tex.id] = gl.createTexture();
 		gl.bindTexture(gl.TEXTURE_2D, textures[tex.id]);
 		
+		let type = gl.RGBA;
+		if(tex.type == "normal"){
+			type = gl.RGB;
+		}
+		
 		if(tex.isFakeTexture){
 			gl.texImage2D(
 				gl.TEXTURE_2D,
 				0,
-				gl.RGBA,
+				type,
 				1,
 				1,
 				0,
-				gl.RGBA,
+				type,
 				gl.UNSIGNED_BYTE,
 				tex.img
 			);
@@ -265,11 +273,11 @@ function Renderer(canvas, shaderTexts){
 			gl.texImage2D(
 				gl.TEXTURE_2D,
 				0,
-				gl.RGBA,
+				type,
 				//tex.img.width,
 				//tex.img.height,
 				//0,
-				gl.RGBA,
+				type,
 				gl.UNSIGNED_BYTE,
 				tex.img
 			);
@@ -306,6 +314,8 @@ function Renderer(canvas, shaderTexts){
 		
 		gl.uniform1f(maxDistanceRef, 8.0);
 		
+		gl.uniform1f(timeRef, performance.now());
+		
 		gl.uniformMatrix4fv(modelRef, false, model);
 		gl.uniformMatrix4fv(viewRef, false, view);
 		gl.uniformMatrix4fv(perspectiveRef, false, perspective);
@@ -327,9 +337,9 @@ function Renderer(canvas, shaderTexts){
 		gl.uniformMatrix4fv(skyboxViewRef, false, view);
 		gl.uniform1f(skyboxAspectRef, canvas.width/canvas.height);
 		
-		gl.activeTexture(gl.TEXTURE1);
+		gl.activeTexture(gl.TEXTURE0);
 		gl.bindTexture(gl.TEXTURE_CUBE_MAP, skyboxTexture);
-		gl.uniform1i(skyboxSkyboxSamplerRef, 1);
+		gl.uniform1i(skyboxSkyboxSamplerRef, 0);
 		
 		gl.bindBuffer(gl.ARRAY_BUFFER, skyboxVertexBuffer);
 		let coord = gl.getAttribLocation(skyboxShaderProgram, "coordinates");
@@ -398,12 +408,16 @@ function Renderer(canvas, shaderTexts){
 		//if(texCoord == -1) console.error(texCoord);
 		
 		gl.activeTexture(gl.TEXTURE0);
-		gl.bindTexture(gl.TEXTURE_2D, textures[primitive.material.pbrMetallicRoughness.baseColorTexture.index]);
-		gl.uniform1i(samplerRef, 0);
+		gl.bindTexture(gl.TEXTURE_CUBE_MAP, skyboxTexture);
+		gl.uniform1i(skyboxSamplerRef, 0);
 		
 		gl.activeTexture(gl.TEXTURE1);
-		gl.bindTexture(gl.TEXTURE_CUBE_MAP, skyboxTexture);
-		gl.uniform1i(skyboxSamplerRef, 1);
+		gl.bindTexture(gl.TEXTURE_2D, textures[primitive.material.pbrMetallicRoughness.baseColorTexture.index]);
+		gl.uniform1i(samplerRef, 1);
+		
+		gl.activeTexture(gl.TEXTURE2);
+		gl.bindTexture(gl.TEXTURE_2D, textures[primitive.material.normalTexture.index]);
+		gl.uniform1i(normalSamplerRef, 2);
 		
 		let color = primitive.material.pbrMetallicRoughness.baseColorFactor;
 		gl.uniform4f(colorRef, color[0], color[1], color[2], color[3]);

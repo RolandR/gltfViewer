@@ -16,12 +16,13 @@ out float fogness;
 out vec3 normal;
 out vec2 vTexCoord;
 out vec4 coord;
+out mat4 normalTransform;
 
 void main(void){
 	
 	mat4 models = model * nodeModel;
 	
-	mat4 normalTransform = inverse(transpose(models));
+	normalTransform = inverse(transpose(models));
 	
 	normal = normalize(normalTransform * vec4(vertexNormal, 0.0)).xyz;
 	vTexCoord = texCoord;
