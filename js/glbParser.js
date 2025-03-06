@@ -119,9 +119,16 @@ function GlbParser(pMon){
 		
 		await pMon.postMessage("Processing scene nodes...", "info", glb.nodes.length);
 		
+		let identityMatrix = [
+			1, 0, 0, 0,
+			0, 1, 0, 0,
+			0, 0, 1, 0,
+			0, 0, 0, 1
+		];
+		
 		for(let i in glb.scenes){
 			glb.scenes[i] = {
-				nodes: await processNodes(glb.scenes[i].nodes)
+				nodes: await processNodes(glb.scenes[i].nodes, identityMatrix)
 			};
 		}
 		
@@ -131,7 +138,7 @@ function GlbParser(pMon){
 		
 	}
 
-	async function processNodes(nodes){
+	async function processNodes(nodes, parentTransform){
 		let outNodes = [];
 		for(let n in nodes){
 			let node = {};
@@ -160,10 +167,12 @@ function GlbParser(pMon){
 				}
 			}
 			
+			node.matrix = multiplyMatrices(parentTransform, node.matrix);
+			
 			nodesProcessed++;
 			await pMon.updateCount(nodesProcessed);
 			
-			node.children = await processNodes(glb.nodes[nodes[n]].children);
+			node.children = await processNodes(glb.nodes[nodes[n]].children, node.matrix);
 			outNodes.push(node);
 			
 		}

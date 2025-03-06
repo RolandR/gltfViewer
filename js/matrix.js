@@ -1,23 +1,21 @@
 
-function multiplyMatrixByVector(m, v){
+function multiplyMatrixByVector(m, v, result){
 	
-	return [
-		v[0]*m[0   ] + v[1]*m[4   ] + v[2]*m[8   ] + v[3]*m[12  ],
-		v[0]*m[1   ] + v[1]*m[5   ] + v[2]*m[9   ] + v[3]*m[13  ],
-		v[0]*m[2   ] + v[1]*m[6   ] + v[2]*m[10  ] + v[3]*m[14  ],
-		v[0]*m[3   ] + v[1]*m[7   ] + v[2]*m[11  ] + v[3]*m[15  ],
-	];
+	result[0] = v[0]*m[0 ] + v[1]*m[4 ] + v[2]*m[8 ] + v[3]*m[12];
+	result[1] = v[0]*m[1 ] + v[1]*m[5 ] + v[2]*m[9 ] + v[3]*m[13];
+	result[2] = v[0]*m[2 ] + v[1]*m[6 ] + v[2]*m[10] + v[3]*m[14];
+	result[3] = v[0]*m[3 ] + v[1]*m[7 ] + v[2]*m[11] + v[3]*m[15];
 	
 }
 
 function multiplyVectorByMatrix(v, m){
 	
-	return [
+	return new Float32Array([
 		v[0]*m[0   ] + v[1]*m[1   ] + v[2]*m[2   ] + v[3]*m[3   ],
 		v[0]*m[0+4 ] + v[1]*m[1+4 ] + v[2]*m[2+4 ] + v[3]*m[3+4 ],
 		v[0]*m[0+8 ] + v[1]*m[1+8 ] + v[2]*m[2+8 ] + v[3]*m[3+8 ],
 		v[0]*m[0+12] + v[1]*m[1+12] + v[2]*m[2+12] + v[3]*m[3+12],
-	];
+	]);
 	
 }
 

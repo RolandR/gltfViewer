@@ -7,7 +7,6 @@ uniform lowp vec4 color;
 uniform highp mat4 model;
 uniform highp mat4 view;
 uniform highp mat4 perspective;
-uniform highp mat4 normalTransform;
 
 uniform samplerCube uSkyboxSampler;
 

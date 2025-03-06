@@ -7,7 +7,6 @@ uniform lowp vec4 color;
 uniform highp mat4 model;
 uniform highp mat4 view;
 uniform highp mat4 perspective;
-uniform highp mat4 normalTransform;
 
 in float fogness;
 
@@ -62,9 +61,9 @@ void main(void){
 	vec4 texColor = texture(uSampler, vTexCoord);
 	
 	
-	vec4 outColor = texColor*ambient*0.8 + directional*directionalLightColor*texColor*0.8;
+	vec4 outColor = texColor*ambient*0.5 + directional*directionalLightColor*texColor*1.0;
 	
-	outColor = mix(skybox, texColor, metallic);
+	outColor = mix(skybox, outColor, metallic);
 	
 	//texColor.rgb = mix(skybox.rgb, texColor.rgb, 0.1);
 

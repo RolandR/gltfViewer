@@ -15,7 +15,10 @@ function Renderer(canvas, shaderTexts){
 	
 	let transparentPrimitives = [];
 
-	let transformMatrixRef;
+	let modelRef;
+	let nodeModelRef;
+	let viewRef;
+	let perspectiveRef;
 	let normalTransformRef;
 	let aspectRef;
 	let colorRef;
@@ -74,6 +77,7 @@ function Renderer(canvas, shaderTexts){
 		
 		maxDistanceRef = gl.getUniformLocation(shaderProgram, "maxDistance");
 		modelRef = gl.getUniformLocation(shaderProgram, "model");
+		nodeModelRef = gl.getUniformLocation(shaderProgram, "nodeModel");
 		viewRef = gl.getUniformLocation(shaderProgram, "view");
 		perspectiveRef = gl.getUniformLocation(shaderProgram, "perspective");
 		normalTransformRef = gl.getUniformLocation(shaderProgram, "normalTransform");
@@ -296,6 +300,7 @@ function Renderer(canvas, shaderTexts){
 		
 		gl.uniform1f(maxDistanceRef, 8.0);
 		
+		gl.uniformMatrix4fv(modelRef, false, model);
 		gl.uniformMatrix4fv(viewRef, false, view);
 		gl.uniformMatrix4fv(perspectiveRef, false, perspective);
 		gl.uniform1f(aspectRef, canvas.width/canvas.height);
@@ -304,7 +309,7 @@ function Renderer(canvas, shaderTexts){
 		//console.log(scene);
 		
 		for(let n in scene.nodes){
-			renderNode(scene.nodes[n], model);
+			renderNode(scene.nodes[n]);
 		}
 		
 		gl.enable(gl.BLEND);
@@ -330,8 +335,7 @@ function Renderer(canvas, shaderTexts){
 		gl.drawArrays(gl.TRIANGLES, 0, 2*3);
 	}
 	
-	function renderNode(node, transform){
-		let localTransform = multiplyMatrices(transform, node.matrix);
+	function renderNode(node){
 		//console.log(localTransform);
 		if(node.mesh !== undefined){
 			let mesh = meshes[node.mesh];
@@ -340,21 +344,21 @@ function Renderer(canvas, shaderTexts){
 				
 				if(primitive.material.alphaMode == "BLEND"){
 					transparentPrimitives.push({
-						transform: localTransform,
+						transform: node.matrix,
 						primitive: primitive
 					});
 				} else {
-					renderPrimitive(primitive, localTransform);
+					renderPrimitive(primitive, node.matrix);
 				}
 			}
 		}
 		
 		for(let c in node.children){
-			renderNode(node.children[c], localTransform);
+			renderNode(node.children[c]);
 		}
 	}
 	
-	function renderPrimitive(primitive, localTransform){
+	function renderPrimitive(primitive, transform){
 		
 		if(primitive.material.name == "Luft"
 		|| primitive.material.name == "Farbe, gelb"
@@ -403,9 +407,9 @@ function Renderer(canvas, shaderTexts){
 		gl.uniform1f(metallicRef, primitive.material.pbrMetallicRoughness.metallicFactor);
 		gl.uniform1f(emissiveRef, 0);
 		
-		gl.uniformMatrix4fv(modelRef, false, localTransform);
-		let localNormalMatrix = normalMatrix(localTransform);
-		gl.uniformMatrix4fv(normalTransformRef, false, localNormalMatrix);
+		gl.uniformMatrix4fv(nodeModelRef, false, transform);
+		//let localNormalMatrix = normalMatrix(transform);
+		//gl.uniformMatrix4fv(normalTransformRef, false, localNormalMatrix);
 		
 		
 		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, primitive.indexBuffer);
