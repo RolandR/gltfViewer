@@ -230,8 +230,25 @@ function GlbParser(pMon){
 		if(glb.samplers === undefined){
 			glb.samplers = [{
 				magFilter: 9729,
-				minFilter: 9987
+				minFilter: 9987,
+				wrapS: 10497,
+				wrapT: 10497
 			}];
+		}
+		
+		for(let s in glb.samplers){
+			if(glb.samplers[s].magFilter === undefined){
+				glb.samplers[s].magFilter = 9729;
+			}
+			if(glb.samplers[s].minFilter === undefined){
+				glb.samplers[s].minFilter = 9987;
+			}
+			if(glb.samplers[s].wrapS === undefined){
+				glb.samplers[s].wrapS = 10497;
+			}
+			if(glb.samplers[s].wrapT === undefined){
+				glb.samplers[s].wrapT = 10497;
+			}
 		}
 		
 		for(let t in glb.textures){

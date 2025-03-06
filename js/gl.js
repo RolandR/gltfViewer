@@ -275,6 +275,10 @@ function Renderer(canvas, shaderTexts){
 			);
 		}
 		gl.generateMipmap(gl.TEXTURE_2D);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, tex.samp.minFilter);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, tex.samp.magFilter);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, tex.samp.wrapS);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, tex.samp.wrapT);
 		
 	}
 	
