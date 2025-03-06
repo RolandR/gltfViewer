@@ -9,12 +9,19 @@
 	</head>
 	<body>
 	<body>
-		<input type="file" id="fileUpload" accept=".glb">
-		<div id="canvasContainer">
+		<div id="upperHalf">
+			<div id="menu">
+				<h1>glTF Wrangler</h1>
+				<label id="fileUploadButton" class="uploadLabel" for="fileUpload">Add a file<input type="file" id="fileUpload" accept=".glb"></label>
+				<div id="fileInformation">
+				
+				</div>
+			</div>
+			<div id="canvasContainer">
+			</div>
 		</div>
 		<div id="imagesContainer">
 		</div>
-		<img src="default-texture.png" id="defaultTexture">
 	</body>
 	<script type="text/javascript" src="./js/gltf.js"></script>
 	<script type="text/javascript" src="./js/matrix.js"></script>

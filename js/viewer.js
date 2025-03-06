@@ -1,10 +1,5 @@
 
 function Viewer(canvasContainer, options){
-	
-	const pMon = new ProgressMonitor(document.body, {
-		itemsCount: 5,
-		title: "Loading .glb file..."
-	});
 
 	const canvas = document.createElement("canvas");
 	canvas.id = "renderCanvas";
@@ -12,10 +7,11 @@ function Viewer(canvasContainer, options){
 	canvas.height = canvasContainer.clientHeight;
 	
 	canvasContainer.appendChild(canvas);
+	
+	let pMon = options.progressMonitor;
 
 	let gl;
 	let shaderTexts = {};
-	let parser = new GlbParser(pMon);
 	let glb = {};
 
 	let angle = 0;
@@ -63,9 +59,7 @@ function Viewer(canvasContainer, options){
 
 	loadResources();
 	
-	async function showFile(file){
-		glb = await parser.loadFile(file);
-		
+	async function showFile(glb){
 		sendFileToGl(glb);
 	}
 	

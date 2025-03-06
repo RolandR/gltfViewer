@@ -35,7 +35,7 @@ function GlbParser(pMon){
 		await pMon.finishItem();
 		await pMon.postMessage("Processing file...");
 		
-		await processFile(loadedFile);
+		await processFile(file, loadedFile);
 		
 		return {
 			originalJson: originalJson,
@@ -44,16 +44,16 @@ function GlbParser(pMon){
 		
 	}
 
-	async function processFile(file){
+	async function processFile(file, fileData){
 		
 		await pMon.postMessage("Decoding...");
 		
 		console.log(file);
-		let view = new DataView(file);
+		let view = new DataView(fileData);
 		const decoder = new TextDecoder();
 		let json = {};
 		
-		const magic = file.slice(0, 4);
+		const magic = fileData.slice(0, 4);
 		console.log("Magic bytes: " + decoder.decode(magic));
 		console.log("Version: " + view.getUint32(1*4, true));
 		console.log("File length: " + view.getUint32(2*4, true));
@@ -65,14 +65,14 @@ function GlbParser(pMon){
 		let i = 3*4;
 		while(i < view.byteLength){
 			let chunkLength = view.getUint32(i, true);
-			let chunkType = decoder.decode(file.slice(i+4, i+8));
+			let chunkType = decoder.decode(fileData.slice(i+4, i+8));
 			console.log("chunkData length: " + chunkLength);
 			console.log("Chunk type: " + chunkType);
 			
 			if(chunkType.toLowerCase() == "json"){
-				jsonText = decoder.decode(file.slice(i+8, i+8+chunkLength));
+				jsonText = decoder.decode(fileData.slice(i+8, i+8+chunkLength));
 			} else {
-				binaryBuffers.push(file.slice(i+8, i+8+chunkLength));
+				binaryBuffers.push(fileData.slice(i+8, i+8+chunkLength));
 			}
 			
 			i += 8+chunkLength;
@@ -92,6 +92,19 @@ function GlbParser(pMon){
 			await pMon.postMessage("Error: No JSON text found", "error");
 			return;
 		}
+		
+		glb.info = {};
+		glb.info.fileName = file.name;
+		glb.info.fileSize = file.size;
+		
+		const k = 1024;
+		const sizes = ['Bytes', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB'];
+		const decimal = 2;
+		const n = Math.floor(Math.log(file.size) / Math.log(k));
+		const fileSize = parseFloat((file.size / Math.pow(k, n)).toFixed(decimal))+" "+sizes[n];
+		
+		glb.info.fileSizeHumanReadable = fileSize;
+		
 		
 		for(let b in binaryBuffers){
 			glb.buffers[b].bufferData = binaryBuffers[b];
