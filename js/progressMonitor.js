@@ -50,6 +50,15 @@ function ProgressMonitor(container, options){
 	
 	/* ========================================= */
 	
+	function start(){
+		container.appendChild(mainEl);
+		progressItems[0].className += " active";
+		
+		return new Promise((resolve) => {
+			setTimeout(resolve, 0);
+		});
+	}
+	
 	function setProgress(newProgress){
 		progress = parseFloat(newProgress);
 		loadingBar.style.width = progress*100 + "%";
@@ -114,7 +123,7 @@ function ProgressMonitor(container, options){
 		
 		activeCount = parseFloat(newCount);
 		
-		if(activeCount%updateCountStep == 0 || activeCount == updateCountStep){
+		if(activeCount%updateCountStep == 0 || activeCount == activeTotalCount){
 			
 			if(activeCountEl && activeTotalCountEl){
 				activeCountEl.innerHTML = " ("+activeCount+"/";
@@ -143,11 +152,6 @@ function ProgressMonitor(container, options){
 				mainEl.remove();
 			}, fadeDuration);
 		}, delay);
-	}
-	
-	function start(){
-		container.appendChild(mainEl);
-		progressItems[0].className += " active";
 	}
 	
 	return {

@@ -2,6 +2,7 @@
 	margin: 0px;
 	padding: 0px;
 	border: none;
+	box-sizing: border-box;
 }
 
 body, html{
@@ -37,12 +38,22 @@ body{
 
 #renderCanvas{
 	background-color: #000;
+	background-color: #000000;
+	background-image: url('../img/noise.png');
+	background-size: 512px 512px;
+	image-rendering: pixelated;
 }
 
 h1{
 	font-weight: normal;
 	font-size: 40px;
 	margin-bottom: 10px;
+	color: #fff
+}
+
+h2{
+	color: #fff;
+	margin-bottom: 20px;
 }
 
 button, #downloadButton, .uploadLabel{
@@ -67,19 +78,35 @@ button:active, #downloadButton:active .uploadLabel:active{
 	background-image: linear-gradient(to top, rgba(255, 255, 255, 0.2), rgba(0, 0, 0, 0.1));
 }
 
-#processFileButton, #fileUploadButton, #downloadButton{
+#processFileButton, #fileUploadButton, #downloadButton, #enableRenderingButton{
 	width: 200px;
 	height: 40px;
 	font-size: 20px;
 	line-height: 37px;
 }
 
-#fileUploadButton, #downloadButton{
+#fileUploadButton, #downloadButton, #enableRenderingButton, #processFileButton{
 	background-color: #fa0;
 }
 
 #processFileButton{
 	display: none;
+}
+
+#enableRenderingButton{
+	position: absolute;
+	top: calc(50% - 20px);
+	left: calc(50% - 100px);
+	display: none;
+}
+
+#downloadButton.fresh{
+	box-shadow: 0px 0px 50px rgba(255, 200, 0, 0.5);
+}
+
+#downloadButton{
+	box-shadow: 0px 0px 0px rgba(255, 200, 0, 0.0);
+	transition: box-shadow 2s;
 }
 
 .uploadLabel>input{
@@ -93,6 +120,7 @@ button:active, #downloadButton:active .uploadLabel:active{
 #fileInformation{
 	flex: 1;
 	width: 100%;
+	padding: 20px;
 }
 
 #cameraZInput, #offsetYInput{
@@ -168,9 +196,8 @@ h3{
 	text-align: left;
 	padding: 30px;
 	height: 300px;
-	left: 50%;
-	margin-left: -200px;
-	top: 30%;
+	left: calc(50% - 200px);
+	top: calc(50% - 150px);
 	background-color: #333;
 	border: 1px #111111 solid;
 	opacity: 1;

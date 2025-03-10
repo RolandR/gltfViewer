@@ -65,7 +65,6 @@ function Viewer(canvasContainer, options){
 	
 	async function sendFileToGl(glb){
 		
-		await pMon.finishItem();
 		await pMon.postMessage("Preparing WebGL context...");
 		
 		let json = glb.json;
@@ -102,6 +101,10 @@ function Viewer(canvasContainer, options){
 		await pMon.finish(0, 500);
 		
 		render();
+		
+		return new Promise((resolve) => {
+			setTimeout(resolve, 0);
+		});
 		
 	}
 

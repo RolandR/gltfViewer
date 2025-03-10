@@ -126,7 +126,8 @@ function GlbParser(pMon){
 		
 		await processScenes();
 		
-		
+		await pMon.postMessage("Done!", "success");
+		await pMon.finish(0, 500);
 		
 		return;
 	}

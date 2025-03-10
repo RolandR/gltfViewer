@@ -1,20 +1,30 @@
 
 
-function GlbTools(){
+function GlbTools(options){
 	
-	function process(toProcess){
+	let pMon = options.progressMonitor;
+	
+	let flattenedNodesCount = 0;
+	
+	async function process(toProcess){
 		let glb = toProcess.json;
 		let originalJson = toProcess.originalJson;
 		
 		applyStoreyToScenes(glb);
 		
-		let flatMeshes = flattenMeshes(glb);
+		await pMon.postMessage("Flattening nodes...", "info", glb.nodes.length);
 		
-		let combinedMeshes = combineMeshes(glb, flatMeshes);
+		let flatMeshes = await flattenMeshes(glb);
 		
-		console.log(combinedMeshes);
+		await pMon.finishItem();
+		await pMon.postMessage("Combining meshes...", "info", glb.meshes.length);
 		
-		let fileUrl = buildNewFile(
+		let combinedMeshes = await combineMeshes(glb, flatMeshes);
+		
+		await pMon.finishItem();
+		await pMon.postMessage("Building new file...");
+		
+		let fileUrl = await buildNewFile(
 			glb,
 			originalJson,
 			combinedMeshes.flatMeshes,
@@ -22,11 +32,14 @@ function GlbTools(){
 			combinedMeshes.newNodes
 		);
 		
+		await pMon.postMessage("Done!", "success");
+		//await pMon.finish(0, 500);
+		
 		return fileUrl;
 		
 	}
 
-	function combineMeshes(glb, flatMeshes){
+	async function combineMeshes(glb, flatMeshes){
 		
 		let newMeshes = [];
 		let newNodes = [];
@@ -56,6 +69,7 @@ function GlbTools(){
 			newScene.nodes.push(parseInt(s));
 		}
 		
+		let processedMeshesCount = 0;
 		
 		for(let s in storeys){
 			let storeyMeshes = getMeshesByStorey(flatMeshes, storeys[s]);
@@ -76,6 +90,9 @@ function GlbTools(){
 				for(let mat in glb.materials){
 					let materialMeshes = getMeshesByMaterial(classMeshes, mat);
 					if(materialMeshes.length > 0){
+						
+						processedMeshesCount += materialMeshes.length;
+						
 						let materialName = glb.materials[mat].name;
 						let meshName = storeys[s]+"/"+ifcClasses[i]+"/"+materialName;
 						
@@ -88,6 +105,8 @@ function GlbTools(){
 							mesh: newMeshes.length-1
 						});
 						classNode.children.push(newNodes.length-1);
+						
+						await pMon.updateCount(processedMeshesCount);
 					}
 				}
 			}
@@ -100,7 +119,7 @@ function GlbTools(){
 		};
 	}
 
-	function buildNewFile(glb, originalJson, flatMeshes, newScene, newNodes){
+	async function buildNewFile(glb, originalJson, flatMeshes, newScene, newNodes){
 		
 		
 		let json = {
@@ -125,6 +144,8 @@ function GlbTools(){
 		json.nodes = newNodes;
 		
 		let pointer = -1;
+		
+		await pMon.postMessage("Preparing buffers...", "info", flatMeshes.length);
 		
 		for(let i in flatMeshes){
 			
@@ -291,7 +312,11 @@ function GlbTools(){
 			}
 			
 			json.meshes.push(outMesh);
+			
+			await pMon.updateCount(i+1);
 		}
+		
+		await pMon.postMessage("Encoding JSON data...");
 		
 		let bufferLength = offset;
 		
@@ -335,6 +360,8 @@ function GlbTools(){
 		bufferHeader[0] = bufferLength;
 		bufferHeader[1] = 0x004E4942;
 		
+		await pMon.postMessage("Creating file blob...");
+		
 		let fileBlob = new Blob([
 			fileHeader,
 			jsonHeader,
@@ -343,13 +370,10 @@ function GlbTools(){
 			...bufferViews
 		], {type: "model/glb"});
 		
-		//console.log(fileLength);
-		//console.log(fileBlob);
-		
-		console.log(json);
+		await pMon.postMessage("Done!", "success");
+		await pMon.finish(0, 500);
 		
 		return(URL.createObjectURL(fileBlob));
-		
 		
 	}
 
@@ -372,19 +396,19 @@ function GlbTools(){
 		}
 	}
 
-	function flattenMeshes(glb){
+	async function flattenMeshes(glb){
 		let flatMeshes = [];
 		
 		for(let s in glb.scenes){
 			for(let n in glb.scenes[s].nodes){
-				flattenNodes(glb, glb.scenes[s].nodes[n], flatMeshes);
+				await flattenNodes(glb, glb.scenes[s].nodes[n], flatMeshes);
 			}
 		}
 		
 		return flatMeshes;
 	}
 
-	function flattenNodes(glb, node, flatMeshes){
+	async function flattenNodes(glb, node, flatMeshes){
 		// apply all transforms and split meshes into new meshes for each primitive
 		
 		if(node.mesh !== undefined){
@@ -416,9 +440,14 @@ function GlbTools(){
 			}
 		}
 		
+		flattenedNodesCount++;
+		await pMon.updateCount(flattenedNodesCount);
+		
 		for(let c in node.children){
-			flattenNodes(glb, node.children[c], flatMeshes);
+			await flattenNodes(glb, node.children[c], flatMeshes);
 		}
+		
+		return;
 	}
 
 	function transformPositions(positions, matrix, isNormal){
