@@ -7,6 +7,8 @@ function main(){
 	const fileInput = document.getElementById("fileUpload");
 	
 	const informationEl = document.getElementById("fileInformation");
+	
+	const processButton = document.getElementById("processFileButton");
 
 	const pMon = new ProgressMonitor(document.body, {
 		itemsCount: 5,
@@ -14,6 +16,7 @@ function main(){
 	});
 	
 	const viewer = new Viewer(canvasContainer, {showFrameCounter: true, progressMonitor: pMon});
+	const tools = new GlbTools({progressMonitor: pMon});
 
 	const parser = new GlbParser(pMon);
 	
@@ -24,8 +27,15 @@ function main(){
 		
 		parser.loadFile(fileInput.files[0]).then(function(result){
 			glb = result;
-			viewer.showFile(glb);
+			//viewer.showFile(glb);
+			pMon.finish(0, 500);
+			
 			showDetails();
+			
+			processButton.style.display = "block";
+			processButton.onclick = function(){
+				tools.process(glb);
+			};
 		});
 		
 	}

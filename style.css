@@ -45,27 +45,37 @@ h1{
 	margin-bottom: 10px;
 }
 
-.uploadLabel{
+button, .uploadLabel{
 	border: 1px #000 solid;
 	display: block;
 	text-align: center;
-	background-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.0), rgba(0, 0, 0, 0.3));
-	background-color: #fa0;
-	border-radius: 5px;
+	background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.1), rgba(0, 0, 0, 0.3));
+	background-color: #111;
 	color: #fff;
 	text-shadow: 1px 1px 0px #000;
+	border-radius: 5px;
 	cursor: pointer;
 }
 
-.uploadLabel:hover{
+button:hover, .uploadLabel:hover{
 	background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.2), rgba(0, 0, 0, 0.1));
 }
 
-.uploadLabel:active{
+button:active, .uploadLabel:active{
 	background-image: linear-gradient(to top, rgba(255, 255, 255, 0.2), rgba(0, 0, 0, 0.1));
 }
 
+#processFileButton{
+	width: 200px;
+	height: 40px;
+	font-size: 20px;
+	line-height: 37px;
+	display: none;
+}
+
 #fileUploadButton{
+	background-color: #fa0;
+	
 	width: 200px;
 	height: 40px;
 	font-size: 20px;

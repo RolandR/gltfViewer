@@ -11,7 +11,7 @@ function ProgressMonitor(container, options){
 	let activeCount = 0;
 	let activeTotalCount = 0;
 	let updateCountStep = 1;
-	let maxCountUpdateTimes = 100;
+	let maxCountUpdateTimes = 20;
 	
 	let mainEl = document.createElement("div");
 	mainEl.className = "loadingStatus";

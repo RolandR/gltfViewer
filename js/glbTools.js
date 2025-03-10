@@ -1,18 +1,21 @@
 
 
-function glbTools(){
+function GlbTools(){
 	
-	function process(glb){
+	function process(toProcess){
+		let glb = toProcess.json;
+		
+		console.log(glb);
+		
+		applyStoreyToScenes(glb);
+		
+		let flatMeshes = flattenMeshes(glb);
+		
+		console.log(flatMeshes);
 		
 	}
 
-	function finishProcessing(){
-		processTextures();
-		processMaterials();
-		processMeshes();
-		processScenes();
-		
-		flattenMeshes();
+	function combineMeshes(flatMeshes){
 		
 		let newMeshes = [];
 		
@@ -33,7 +36,7 @@ function glbTools(){
 			nodes: []
 		};
 		
-		/*for(let s in storeys){
+		for(let s in storeys){
 			newNodes[s] = {
 				name: storeys[s],
 				children: []
@@ -59,30 +62,9 @@ function glbTools(){
 					newNodes[s].children.push(newNodes.length-1);
 				}
 			}
-		}*/
-		
-		for(let mat in materials){
-			let materialMeshes = getMeshesByMaterial(flatMeshes, mat);
-			if(materialMeshes.length > 0){
-				let materialName = materials[mat].name;
-				let materialMesh = mergeMeshes(materialMeshes, materialName);
-				materialMesh.primitives[0].material = mat;
-				newMeshes.push(materialMesh);
-				
-				newNodes.push({
-					name: materialName,
-					mesh: newMeshes.length-1
-				});
-				newScene.nodes.push(newNodes.length-1);
-			} else {
-				console.error("no meshes found?");
-			}
 		}
 		
-		flatMeshes = newMeshes;
-		
-		//flatMeshes = [mergeMeshes(flatMeshes)];
-		buildNewFile();
+		return newMeshes;
 	}
 
 	function buildNewFile(){
@@ -342,46 +324,46 @@ function glbTools(){
 		
 	}
 
-	function applyStoreyToScenes(){
-		let identityMatrix = [
-			1, 0, 0, 0,
-			0, 1, 0, 0,
-			0, 0, 1, 0,
-			0, 0, 0, 1
-		];
-		
+	function applyStoreyToScenes(glb){
 		for(let i in glb.scenes){
 			applyStoreyToNodes(glb.scenes[i].nodes, "NoStorey");
 		}
 	}
 
 	function applyStoreyToNodes(nodes, storey){
-		let outNodes = [];
 		for(let n in nodes){
-			let node = glb.nodes[nodes[n]];
+			let node = nodes[n];
 			if(node.name.substring(0, 17) == "IfcBuildingStorey"){
 				storey = node.name.substring(18);
 			}
 			
 			node.storey = storey;
 			
-			applyStoreyToNodes(glb.nodes[nodes[n]].children, storey);
+			applyStoreyToNodes(nodes[n].children, storey);
 		}
 	}
 
-	function flattenMeshes(){
-		for(let s in scenes){
-			for(let n in scenes[s].nodes){
-				flattenNodes(scenes[s].nodes[n]);
+	function flattenMeshes(glb){
+		let flatMeshes = [];
+		
+		for(let s in glb.scenes){
+			for(let n in glb.scenes[s].nodes){
+				flattenNodes(glb, glb.scenes[s].nodes[n], flatMeshes);
 			}
 		}
+		
+		return flatMeshes;
 	}
 
-	function flattenNodes(node){
+	function flattenNodes(glb, node, flatMeshes){
 		// apply all transforms and split meshes into new meshes for each primitive
 		
+		console.log(node.mesh);
+		
 		if(node.mesh !== undefined){
-			let mesh = meshes[node.mesh];
+			let mesh = glb.meshes[node.mesh];
+			console.log(node);
+			console.log(mesh);
 			let modelMatrix = node.matrix;
 			for(let p in mesh.processedPrimitives){
 				
@@ -410,7 +392,7 @@ function glbTools(){
 		}
 		
 		for(let c in node.children){
-			flattenNodes(node.children[c]);
+			flattenNodes(glb, node.children[c], flatMeshes);
 		}
 	}
 
