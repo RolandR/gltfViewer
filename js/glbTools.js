@@ -72,7 +72,7 @@ function GlbTools(){
 					newMeshes.push(materialMesh);
 					
 					newNodes.push({
-						name: materialName,
+						name: storeys[s]+"/"+materialName,
 						mesh: newMeshes.length-1
 					});
 					newNodes[s].children.push(newNodes.length-1);
@@ -417,18 +417,16 @@ function GlbTools(){
 			v4 = 0.0;
 		}
 		
-		let vec = new Float32Array(4);
-		let result = new Float32Array(4);
-		
 		for(let i = 0; i < positions.length; i += 3){
-			vec.set([
+			
+			let vec = [
 				positions[i  ],
 				positions[i+1],
 				positions[i+2],
 				v4
-			], 0);
+			];
 			
-			multiplyMatrixByVector(matrix, vec, result);
+			let result = multiplyMatrixByVector(matrix, vec);
 			
 			if(isNormal){
 				result = normalizeVec4([result[0], result[1], result[2], 0.0]);
@@ -441,10 +439,6 @@ function GlbTools(){
 			if(!isNormal && result[3] != 1.0){
 				console.warn("vec4.w should be 1.0, but is "+result[3]);
 			}
-			
-			/*out[i  ] = positions[i+0];
-			out[i+1] = positions[i+1];
-			out[i+2] = positions[i+2];*/
 		}
 		
 		return out;

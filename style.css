@@ -45,7 +45,7 @@ h1{
 	margin-bottom: 10px;
 }
 
-button, .uploadLabel{
+button, #downloadButton, .uploadLabel{
 	border: 1px #000 solid;
 	display: block;
 	text-align: center;
@@ -55,32 +55,31 @@ button, .uploadLabel{
 	text-shadow: 1px 1px 0px #000;
 	border-radius: 5px;
 	cursor: pointer;
+	text-decoration: none;
+	margin-top: 15px;
 }
 
-button:hover, .uploadLabel:hover{
+button:hover, #downloadButton:hover, .uploadLabel:hover{
 	background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.2), rgba(0, 0, 0, 0.1));
 }
 
-button:active, .uploadLabel:active{
+button:active, #downloadButton:active .uploadLabel:active{
 	background-image: linear-gradient(to top, rgba(255, 255, 255, 0.2), rgba(0, 0, 0, 0.1));
 }
 
-#processFileButton{
+#processFileButton, #fileUploadButton, #downloadButton{
 	width: 200px;
 	height: 40px;
 	font-size: 20px;
 	line-height: 37px;
-	display: none;
 }
 
-#fileUploadButton{
+#fileUploadButton, #downloadButton{
 	background-color: #fa0;
-	
-	width: 200px;
-	height: 40px;
-	font-size: 20px;
-	line-height: 37px;
-	margin-bottom: 20px;
+}
+
+#processFileButton{
+	display: none;
 }
 
 .uploadLabel>input{
@@ -157,28 +156,6 @@ h3{
 	text-shadow: #000 3px 3px;
 	margin: 20px;
 }
-
-#downloadButton{
-	color: #fff;
-	text-decoration: none;
-	border: 1px #000 solid;
-	margin: 10px;
-	display: block;
-	width: 150px;
-	height: 50px;
-	line-height: 48px;
-	text-align: center;
-	background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.1), rgba(0, 0, 0, 0.3));
-}
-
-#downloadButton:hover{
-	background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.0));
-}
-
-#downloadButton:active{
-	background-image: linear-gradient(to top, rgba(255, 255, 255, 0.1), rgba(0, 0, 0, 0.3));
-}
-
 
 
 /* =========== Progress Monitor ============= */

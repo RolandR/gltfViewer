@@ -413,18 +413,16 @@ function GlbParser(pMon){
 					let indexAccessor = glb.accessors[mesh.primitives[p].indices];
 					let indexBufferView = glb.bufferViews[indexAccessor.bufferView];
 					
-					let indexByteStride;
 					let indexView;
 					
+					// read indices according to their component type, but always store them internally as Uint32
 					if(gltfEnums.dataTypes[indexAccessor.componentType] == "UNSIGNED_SHORT"){
-						indexByteStride = 2; // 2 bytes for Uint16
-						indexView = new Uint16Array(indexBufferView.byteLength/2);
+						indexView = new Uint32Array(indexBufferView.byteLength*2);
 						for(let i = 0; i < indexBufferView.byteLength/2; i++){
 							indexView[i] = indexBufferView.view.getUint16(i*2, true);
 						}
 					} else if(gltfEnums.dataTypes[indexAccessor.componentType] == "UNSIGNED_INT"){
-						indexByteStride = 4; // 4 bytes for Uint32
-						indexView = new Uint32Array(indexBufferView.byteLength/4);
+						indexView = new Uint32Array(indexBufferView.byteLength);
 						for(let i = 0; i < indexBufferView.byteLength/4; i++){
 							indexView[i] = indexBufferView.view.getUint32(i*4, true);
 						}
@@ -432,6 +430,9 @@ function GlbParser(pMon){
 						console.error("Unsupported component type for indices: "+gltfEnums.dataTypes[indexAccessor.componentType]);
 					}
 					
+					let indexComponentType = 5125; // UNSIGNED_INT
+					
+					let indexByteStride = 4; // 4 bytes for Uint32
 					if(indexBufferView.byteStride){
 						indexByteStride = indexBufferView.byteStride;
 					}
@@ -508,7 +509,7 @@ function GlbParser(pMon){
 					primitives.push({
 						indexView: indexView,
 						indexByteStride: indexByteStride,
-						indexComponentType: indexAccessor.componentType,
+						indexComponentType: indexComponentType,
 						positionView: positionView,
 						positionByteStride: positionByteStride,
 						positionComponentType: positionAccessor.componentType,
