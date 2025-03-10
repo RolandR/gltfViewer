@@ -1,1 +1,1 @@
-![Chair wireframe](./chair-lines.png)
+![Chair wireframe](./img/chair-lines.png)

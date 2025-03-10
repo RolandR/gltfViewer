@@ -152,12 +152,12 @@ function Viewer(canvasContainer, options){
 		skyboxTextures.lf.id = "skybox-lf";
 		skyboxTextures.rt.id = "skybox-rt";
 		
-		skyboxTextures.up.src = "skybox/skybox-up.jpg";
-		skyboxTextures.dn.src = "skybox/skybox-dn.jpg";
-		skyboxTextures.ft.src = "skybox/skybox-ft.jpg";
-		skyboxTextures.bk.src = "skybox/skybox-bk.jpg";
-		skyboxTextures.lf.src = "skybox/skybox-lf.jpg";
-		skyboxTextures.rt.src = "skybox/skybox-rt.jpg";
+		skyboxTextures.up.src = "img/skybox/skybox-up.jpg";
+		skyboxTextures.dn.src = "img/skybox/skybox-dn.jpg";
+		skyboxTextures.ft.src = "img/skybox/skybox-ft.jpg";
+		skyboxTextures.bk.src = "img/skybox/skybox-bk.jpg";
+		skyboxTextures.lf.src = "img/skybox/skybox-lf.jpg";
+		skyboxTextures.rt.src = "img/skybox/skybox-rt.jpg";
 	}
 
 	canvas.addEventListener("mousedown", function(e){
