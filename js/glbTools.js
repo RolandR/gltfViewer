@@ -6,13 +6,9 @@ function GlbTools(){
 		let glb = toProcess.json;
 		let originalJson = toProcess.originalJson;
 		
-		console.log(glb);
-		
 		applyStoreyToScenes(glb);
 		
 		let flatMeshes = flattenMeshes(glb);
-		
-		console.log(flatMeshes);
 		
 		let combinedMeshes = combineMeshes(glb, flatMeshes);
 		
@@ -63,19 +59,36 @@ function GlbTools(){
 		
 		for(let s in storeys){
 			let storeyMeshes = getMeshesByStorey(flatMeshes, storeys[s]);
-			for(let mat in glb.materials){
-				let materialMeshes = getMeshesByMaterial(storeyMeshes, mat);
-				if(materialMeshes.length > 0){
-					let materialName = glb.materials[mat].name;
-					let materialMesh = mergeMeshes(materialMeshes, storeys[s]+"/"+materialName);
-					materialMesh.primitives[0].material = mat;
-					newMeshes.push(materialMesh);
-					
-					newNodes.push({
-						name: storeys[s]+"/"+materialName,
-						mesh: newMeshes.length-1
-					});
-					newNodes[s].children.push(newNodes.length-1);
+			
+			let ifcClasses = getIfcClasses(storeyMeshes);
+			
+			for(let i in ifcClasses){
+				let classMeshes = getMeshesByIfcClass(storeyMeshes, ifcClasses[i]);
+				
+				let classNode = {
+					name: storeys[s]+"/"+ifcClasses[i],
+					children: []
+				};
+				
+				newNodes.push(classNode);
+				newNodes[s].children.push(newNodes.length-1);
+				
+				for(let mat in glb.materials){
+					let materialMeshes = getMeshesByMaterial(classMeshes, mat);
+					if(materialMeshes.length > 0){
+						let materialName = glb.materials[mat].name;
+						let meshName = storeys[s]+"/"+ifcClasses[i]+"/"+materialName;
+						
+						let combinedMesh = mergeMeshes(materialMeshes, meshName);
+						combinedMesh.primitives[0].material = mat;
+						newMeshes.push(combinedMesh);
+						
+						newNodes.push({
+							name: meshName,
+							mesh: newMeshes.length-1
+						});
+						classNode.children.push(newNodes.length-1);
+					}
 				}
 			}
 		}
@@ -578,6 +591,36 @@ function GlbTools(){
 		const regex = /^.*\.\d{3}$/;
 		let list = [];
 		
+	}
+	
+	function getIfcClasses(meshes){
+		let types = {};
+		
+		for(let i in meshes){
+			let slashIndex = meshes[i].nodeName.indexOf("/");
+			if(slashIndex !== -1){
+				let ifcClass = meshes[i].nodeName.substring(0, slashIndex);
+				types[ifcClass] = 1;
+			}
+		}
+		
+		return Object.keys(types);
+	}
+	
+	function getMeshesByIfcClass(meshes, ifcClassToMatch){
+		let outMeshes = [];
+		
+		for(let i in meshes){
+			let slashIndex = meshes[i].nodeName.indexOf("/");
+			if(slashIndex !== -1){
+				let ifcClass = meshes[i].nodeName.substring(0, slashIndex);
+				if(ifcClass == ifcClassToMatch){
+					outMeshes.push(meshes[i]);
+				}
+			}
+		}
+		
+		return outMeshes;
 	}
 	
 	return {

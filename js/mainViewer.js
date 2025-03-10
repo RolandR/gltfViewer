@@ -28,8 +28,8 @@ function main(){
 		
 		parser.loadFile(fileInput.files[0]).then(function(result){
 			glb = result;
-			viewer.showFile(glb);
-			//pMon.finish(0, 500);
+			//viewer.showFile(glb);
+			pMon.finish(0, 500);
 			
 			showDetails();
 			
