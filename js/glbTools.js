@@ -4,6 +4,7 @@ function GlbTools(){
 	
 	function process(toProcess){
 		let glb = toProcess.json;
+		let originalJson = toProcess.originalJson;
 		
 		console.log(glb);
 		
@@ -13,11 +14,26 @@ function GlbTools(){
 		
 		console.log(flatMeshes);
 		
+		let combinedMeshes = combineMeshes(glb, flatMeshes);
+		
+		console.log(combinedMeshes);
+		
+		let fileUrl = buildNewFile(
+			glb,
+			originalJson,
+			combinedMeshes.flatMeshes,
+			combinedMeshes.newScene,
+			combinedMeshes.newNodes
+		);
+		
+		return fileUrl;
+		
 	}
 
-	function combineMeshes(flatMeshes){
+	function combineMeshes(glb, flatMeshes){
 		
 		let newMeshes = [];
+		let newNodes = [];
 		
 		let storeys = [
 			//"NoStorey",
@@ -31,8 +47,8 @@ function GlbTools(){
 			"06.DA"
 		];
 		
-		newScene = {
-			name: scenes[0].name,
+		let newScene = {
+			name: glb.scenes[0].name,
 			nodes: []
 		};
 		
@@ -47,10 +63,10 @@ function GlbTools(){
 		
 		for(let s in storeys){
 			let storeyMeshes = getMeshesByStorey(flatMeshes, storeys[s]);
-			for(let mat in materials){
+			for(let mat in glb.materials){
 				let materialMeshes = getMeshesByMaterial(storeyMeshes, mat);
 				if(materialMeshes.length > 0){
-					let materialName = materials[mat].name;
+					let materialName = glb.materials[mat].name;
 					let materialMesh = mergeMeshes(materialMeshes, storeys[s]+"/"+materialName);
 					materialMesh.primitives[0].material = mat;
 					newMeshes.push(materialMesh);
@@ -64,10 +80,16 @@ function GlbTools(){
 			}
 		}
 		
-		return newMeshes;
+		return {
+			flatMeshes: newMeshes,
+			newScene: newScene,
+			newNodes: newNodes
+		};
 	}
 
-	function buildNewFile(){
+	function buildNewFile(glb, originalJson, flatMeshes, newScene, newNodes){
+		
+		
 		let json = {
 			asset: {
 				generator: "Roland's GLTF converter thingy!",
@@ -87,6 +109,7 @@ function GlbTools(){
 		let offset = 0;
 		
 		json.scenes[0] = newScene;
+		json.nodes = newNodes;
 		
 		let pointer = -1;
 		
@@ -98,7 +121,6 @@ function GlbTools(){
 			});
 			json.scenes[0].nodes.push(json.nodes.length-1); // TODO: use actual node structure*/
 			
-			json.nodes = newNodes;
 			
 			let mesh = flatMeshes[i];
 			
@@ -264,13 +286,11 @@ function GlbTools(){
 			byteLength: bufferLength
 		};
 		
-		json.materials = materials;
-		
-		console.log(materials);
+		json.materials = originalJson.materials;
 		
 		/*======== create buffer ========*/
 		
-		console.log(json);
+		//console.log(json);
 		
 		let jsonString = JSON.stringify(json);
 		
@@ -310,17 +330,13 @@ function GlbTools(){
 			...bufferViews
 		], {type: "model/glb"});
 		
-		console.log(fileLength);
-		console.log(fileBlob);
+		//console.log(fileLength);
+		//console.log(fileBlob);
 		
-		let objectUrl = URL.createObjectURL(fileBlob);
+		console.log(json);
 		
-		let downloadLink = document.createElement("a");
-		downloadLink.innerHTML = "Download GLB";
-		downloadLink.download = "output.glb";
-		downloadLink.href = objectUrl;
-		downloadLink.id = "downloadButton";
-		structureContainer.appendChild(downloadLink);
+		return(URL.createObjectURL(fileBlob));
+		
 		
 	}
 
@@ -358,12 +374,8 @@ function GlbTools(){
 	function flattenNodes(glb, node, flatMeshes){
 		// apply all transforms and split meshes into new meshes for each primitive
 		
-		console.log(node.mesh);
-		
 		if(node.mesh !== undefined){
 			let mesh = glb.meshes[node.mesh];
-			console.log(node);
-			console.log(mesh);
 			let modelMatrix = node.matrix;
 			for(let p in mesh.processedPrimitives){
 				
@@ -405,26 +417,29 @@ function GlbTools(){
 			v4 = 0.0;
 		}
 		
+		let vec = new Float32Array(4);
+		let result = new Float32Array(4);
+		
 		for(let i = 0; i < positions.length; i += 3){
-			let vec = [
+			vec.set([
 				positions[i  ],
 				positions[i+1],
 				positions[i+2],
 				v4
-			];
+			], 0);
 			
-			let transformedVec = multiplyMatrixByVector(matrix, vec);
+			multiplyMatrixByVector(matrix, vec, result);
 			
 			if(isNormal){
-				transformedVec = normalizeVec4([transformedVec[0], transformedVec[1], transformedVec[2], 0.0]);
+				result = normalizeVec4([result[0], result[1], result[2], 0.0]);
 			}
 			
-			out[i  ] = transformedVec[0];
-			out[i+1] = transformedVec[1];
-			out[i+2] = transformedVec[2];
+			out[i  ] = result[0];
+			out[i+1] = result[1];
+			out[i+2] = result[2];
 			
-			if(!isNormal && transformedVec[3] != 1.0){
-				console.warn("vec4.w should be 1.0, but is "+transformedVec[3]);
+			if(!isNormal && result[3] != 1.0){
+				console.warn("vec4.w should be 1.0, but is "+result[3]);
 			}
 			
 			/*out[i  ] = positions[i+0];
@@ -476,8 +491,6 @@ function GlbTools(){
 			totalSizes
 		);
 		
-		console.log(totalSizes);
-		
 		newMesh.primitives = [{
 			indices: new Uint32Array(totalSizes.indices),
 			positions: new Float32Array(totalSizes.positions),
@@ -511,9 +524,6 @@ function GlbTools(){
 			positionOffset += meshes[m].primitives[0].positions.length;
 			
 		}
-		
-		console.log(newMesh.primitives[0].indices);
-		console.log(newMesh.primitives[0].positions);
 		
 		return newMesh;
 		

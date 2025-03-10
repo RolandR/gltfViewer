@@ -8,6 +8,7 @@ function main(){
 	
 	const informationEl = document.getElementById("fileInformation");
 	
+	const toolsContainer = document.getElementById("toolsContainer");
 	const processButton = document.getElementById("processFileButton");
 
 	const pMon = new ProgressMonitor(document.body, {
@@ -34,7 +35,14 @@ function main(){
 			
 			processButton.style.display = "block";
 			processButton.onclick = function(){
-				tools.process(glb);
+				let objectUrl = tools.process(glb);
+				
+				let downloadLink = document.createElement("a");
+				downloadLink.innerHTML = "Download GLB";
+				downloadLink.download = "output.glb";
+				downloadLink.href = objectUrl;
+				downloadLink.id = "downloadButton";
+				toolsContainer.appendChild(downloadLink);
 			};
 		});
 		
