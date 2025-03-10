@@ -12,7 +12,6 @@ function Viewer(canvasContainer, options){
 
 	let gl;
 	let shaderTexts = {};
-	let glb = {};
 
 	let angle = 0;
 	let scale = 0.5;
@@ -59,34 +58,34 @@ function Viewer(canvasContainer, options){
 
 	loadResources();
 	
-	async function showFile(glb){
-		sendFileToGl(glb);
+	async function showFile(file){
+		sendFileToGl(file);
 	}
 	
-	async function sendFileToGl(glb){
+	async function sendFileToGl(file){
 		
 		await pMon.postMessage("Preparing WebGL context...");
 		
-		let json = glb.json;
+		glb = file.json;
 		
-		gl.addScene(json.scenes[json.scene]);
+		gl.addScene(glb.scenes[glb.scene]);
 		
-		for(let t in json.textures){
-			let tex = json.textures[t];
+		for(let t in glb.textures){
+			let tex = glb.textures[t];
 			
 			gl.addTexture(tex);
 		}
 		
-		for(let m in json.materials){
-			gl.addMaterial(json.materials[m]);
+		for(let m in glb.materials){
+			gl.addMaterial(glb.materials[m]);
 		}
 		
-		await pMon.postMessage("Preparing meshes for render...", "info", json.meshes.length);
+		await pMon.postMessage("Preparing meshes for render...", "info", glb.meshes.length);
 		
-		for(let m in json.meshes){
+		for(let m in glb.meshes){
 			m = parseInt(m);
 			
-			let mesh = json.meshes[m];
+			let mesh = glb.meshes[m];
 			let outMesh = {
 				id: m,
 				name: mesh.name,
@@ -212,10 +211,29 @@ function Viewer(canvasContainer, options){
 		let f = 1.0 / Math.tan(fieldOfViewInRadians / 2);
 		let rangeInv = 1 / (near - far);
 		
-		let modelTransform = [
+		let max = glb.info.globalMax;
+		let min = glb.info.globalMin;
+		
+		let identityTransform = [
 			1, 0, 0, 0,
 			0, 1, 0, 0,
 			0, 0, 1, 0,
+			0, 0, 0, 1
+		];
+		
+		let fixedOffsetTransform = [
+			1, 0, 0, 0,
+			0, 1, 0, 0,
+			0, 0, 1, 0,
+			-70, -12.5, -60, 1
+		];
+		
+		let fixedScale = 0.0064*2;
+		
+		let fixedScaleTransform = [
+			fixedScale, 0, 0, 0,
+			0, fixedScale, 0, 0,
+			0, 0, fixedScale, 0,
 			0, 0, 0, 1
 		];
 		
@@ -234,7 +252,9 @@ function Viewer(canvasContainer, options){
 		];
 		
 		modelTransform = multiplyArrayOfMatrices([
-			modelTransform,
+			identityTransform,
+			fixedOffsetTransform,
+			fixedScaleTransform,
 			scaleTransform,
 			offsetTransform
 			//rotateTransform

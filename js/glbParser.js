@@ -9,6 +9,9 @@ function GlbParser(pMon){
 	
 	let nodesProcessed = 0;
 	
+	let globalMax = [];
+	let globalMin = [];
+	
 	async function loadFile(file){
 		
 		const reader = new FileReader();
@@ -104,6 +107,9 @@ function GlbParser(pMon){
 		const fileSize = parseFloat((file.size / Math.pow(k, n)).toFixed(decimal))+" "+sizes[n];
 		
 		glb.info.fileSizeHumanReadable = fileSize;
+		
+		glb.info.globalMax = globalMax;
+		glb.info.globalMin = globalMin;
 		
 		
 		for(let b in binaryBuffers){
@@ -442,21 +448,23 @@ function GlbParser(pMon){
 					
 					//console.log(positionAccessor.max);
 					
-					let sizes = [
-						positionAccessor.max[0] - positionAccessor.min[0],
-						positionAccessor.max[1] - positionAccessor.min[1],
-						positionAccessor.max[2] - positionAccessor.min[2]
-					]
-					
-					let maxSize = Math.max(...sizes);
-					
-					let offsets = [
-						(positionAccessor.max[0] + positionAccessor.min[0])/2,
-						(positionAccessor.max[1] + positionAccessor.min[1])/2,
-						(positionAccessor.max[2] + positionAccessor.min[2])/2
-					]
-					
-					//console.log(sizes, offsets);
+					if(globalMax[0] === undefined){
+						globalMax[0] = positionAccessor.max[0];
+						globalMax[1] = positionAccessor.max[1];
+						globalMax[2] = positionAccessor.max[2];
+						
+						globalMin[0] = positionAccessor.min[0];
+						globalMin[1] = positionAccessor.min[1];
+						globalMin[2] = positionAccessor.min[2];
+					} else {
+						globalMax[0] = Math.max(globalMax[0], positionAccessor.max[0]);
+						globalMax[1] = Math.max(globalMax[1], positionAccessor.max[1]);
+						globalMax[2] = Math.max(globalMax[2], positionAccessor.max[2]);
+						
+						globalMin[0] = Math.min(globalMin[0], positionAccessor.min[0]);
+						globalMin[1] = Math.min(globalMin[1], positionAccessor.min[1]);
+						globalMin[2] = Math.min(globalMin[2], positionAccessor.min[2]);
+					}
 					
 					let positionBufferView = glb.bufferViews[positionAccessor.bufferView];
 					let positionByteStride = 4*3; // 4 bytes for float32, *3 for VEC3
@@ -531,6 +539,9 @@ function GlbParser(pMon){
 		} else {
 			await pMon.postMessage("This file contains no meshes!", "warn");
 		}
+		
+		console.log(globalMax);
+		console.log(globalMin);
 		
 		return;
 	}

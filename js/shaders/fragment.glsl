@@ -80,12 +80,14 @@ void main(void){
 	
 	vec4 outColor = texColor*ambient*0.5 + directional*directionalLightColor*texColor*1.0;
 	
-	outColor = mix(skybox, outColor, metallic);
+	outColor = mix(outColor, skybox, metallic);
+	
+	float alpha = mix(texColor.a, skybox.a, metallic);
 
 	//vec3 fColor = texColor.rgb * max(lighting, emissive);
 	//fColor = mix(fColor, fogColor, fogness);
 	
 	//fragColor = vec4(outColor.rgb, texColor.a);
-	fragColor = vec4(outColor.rgb, texColor.a);
+	fragColor = vec4(outColor.rgb, alpha);
 	
 }

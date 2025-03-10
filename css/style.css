@@ -18,7 +18,7 @@ body{
 
 #upperHalf{
 	display: flex;
-	height: 50%;
+	height: 100%;
 }
 
 #menu{

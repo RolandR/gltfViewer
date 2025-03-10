@@ -385,7 +385,7 @@ function Renderer(canvas, shaderTexts){
 		
 		if(primitive.material.name == "Glas Normalglas"){
 			primitive.material.pbrMetallicRoughness.baseColorFactor[3] = 0.4;
-			primitive.material.pbrMetallicRoughness.metallicFactor = 0.9;
+			primitive.material.pbrMetallicRoughness.metallicFactor = 0.7;
 			primitive.material.pbrMetallicRoughness.roughnessFactor = 0.0;
 		}
 		
