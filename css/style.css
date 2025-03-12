@@ -43,6 +43,7 @@ main{
 }
 
 #largestMeshes{
+	flex: 1;
 	padding: 20px;
 }
 
@@ -69,6 +70,32 @@ th{
 
 td.number, th.number{
 	text-align: right;
+}
+
+#materials{
+	flex: 1;
+	padding: 20px;
+}
+
+.materialProperties{
+	display: flex;
+	flex-direction: row;
+	color: #999;
+}
+
+.materialProperties>div{
+	flex: 1;
+}
+
+.colorSwab{
+	image-rendering: pixelated;
+}
+
+.material{
+	border: 1px rgba(255, 255, 255, 0.1) solid;
+	margin: 5px;
+	padding: 5px;
+	border-radius: 5px;
 }
 
 #menu{

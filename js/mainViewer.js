@@ -14,6 +14,7 @@ function main(){
 	const enableRenderingButton = document.getElementById("enableRenderingButton");
 	
 	const largestMeshesContainer = document.getElementById("largestMeshes");
+	const materialsContainer = document.getElementById("materials");
 	
 	const viewerPMon = new ProgressMonitor(canvasContainer, {
 		itemsCount: 1,
@@ -79,7 +80,13 @@ function main(){
 	}
 	
 	function showDetails(){
-		informationEl.innerHTML += "<h2>"+glb.json.info.fileName+"</h2>";
+		updateFileDetails();
+		updateLargestMeshes();
+		updateMaterials();
+	}
+	
+	function updateFileDetails(){
+		informationEl.innerHTML = "<h2>"+glb.json.info.fileName+"</h2>";
 		informationEl.innerHTML += "<p>File size: "+glb.json.info.fileSizeHumanReadable+"</p>";
 		informationEl.innerHTML += "<p>Accessors: "+glb.json.accessors.length+"</p>";
 		informationEl.innerHTML += "<p>BufferViews: "+glb.json.bufferViews.length+"</p>";
@@ -97,8 +104,9 @@ function main(){
 		informationEl.innerHTML += "<p>Meshes: "+glb.json.meshes.length+"</p>";
 		informationEl.innerHTML += "<p>Nodes: "+glb.json.nodes.length+"</p>";
 		informationEl.innerHTML += "<p>Scenes: "+glb.json.scenes.length+"</p>";
-		
-		
+	}
+	
+	function updateLargestMeshes(){
 		let meshSizes = tools.getBiggestMeshes(glb.json);
 		let count = 100;
 		count = Math.min(count, meshSizes.length);
@@ -143,5 +151,64 @@ function main(){
 		
 		largestMeshesContainer.innerHTML += outString;
 	}
-
+	
+	function updateMaterials(){
+		materialsContainer.innerHTML += "<h2>Materials</h2>";
+		
+		for(let i in glb.json.materials){
+			let material = glb.json.materials[i];
+			
+			let materialElement = document.createElement("div");
+			materialElement.className = "material";
+			
+			let r = material.pbrMetallicRoughness.baseColorFactor[0]*255;
+			let g = material.pbrMetallicRoughness.baseColorFactor[1]*255;
+			let b = material.pbrMetallicRoughness.baseColorFactor[2]*255;
+			let a = material.pbrMetallicRoughness.baseColorFactor[3];
+			
+			let color = "rgb("+r+", "+g+", "+b+")";
+			let colorA = "rgba("+r+", "+g+", "+b+", "+a+")";
+			let gradient = "linear-gradient(to right, "+colorA+", "+colorA+" 50%, "+color+" 50%, "+color+")";
+			let background = gradient + ", url(\"./img/alpha-checkerboard.png\")";
+			
+			let colorSwab = document.createElement("div");
+			colorSwab.className = "colorSwab";
+			colorSwab.style.background = background;
+			colorSwab.style.backgroundSize = "auto, 10px";
+			
+			let materialProperties = document.createElement("div");
+			materialProperties.className = "materialProperties";
+			
+			let content = "<div>"
+			content += "<p>metallicFactor: "+material.pbrMetallicRoughness.metallicFactor+"</p>";
+			content += "<p>roughnessFactor: "+material.pbrMetallicRoughness.roughnessFactor+"</p>";
+			content += "<p>alpha: "+a+"</p>";
+			content += "</div>";
+			
+			materialProperties.innerHTML = content;
+			materialProperties.appendChild(colorSwab);
+			
+			materialProperties.onclick = function(){
+				
+				material.pbrMetallicRoughness.baseColorFactor[0] = 1.0;
+				material.pbrMetallicRoughness.baseColorFactor[1] = 0.0;
+				material.pbrMetallicRoughness.baseColorFactor[2] = 0.0;
+				material.pbrMetallicRoughness.baseColorFactor[3] = 1.0;
+				
+			};
+			
+			let title = "";
+			title += i;
+			title += ": ";
+			title += material.name;
+			
+			materialElement.innerHTML = title;
+			materialElement.appendChild(materialProperties);
+			
+			
+			materialsContainer.appendChild(materialElement);
+			
+		}
+	}
+	
 }

@@ -74,11 +74,11 @@ void main(void){
 
 	highp float directional = clamp(dot(directionalVector, normal)*1.0, 0.0, 1.0);
 
-	vec4 texColor = texture(uSampler, vTexCoord);
-	//vec4 texColor = vec4(0.5, 0.5, 0.5, 1.0);
+	//vec4 texColor = texture(uSampler, vTexCoord);
+	vec4 texColor = color;
 	
 	
-	vec4 outColor = texColor*ambient*0.5 + directional*directionalLightColor*texColor*1.0;
+	vec4 outColor = texColor*ambient*0.8 + directional*directionalLightColor*texColor*1.0;
 	
 	outColor = mix(outColor, skybox, metallic);
 	

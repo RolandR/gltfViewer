@@ -10,6 +10,8 @@ function GlbTools(options){
 		let glb = toProcess.json;
 		let originalJson = toProcess.originalJson;
 		
+		fixMaterials(glb);
+		
 		applyStoreyToScenes(glb);
 		
 		await pMon.postMessage("Flattening nodes...", "info", glb.nodes.length);
@@ -37,6 +39,49 @@ function GlbTools(options){
 		
 		return fileUrl;
 		
+	}
+	
+	function fixMaterials(glb){
+		for(let i in glb.materials){
+			let material = glb.materials[i];
+			
+			switch(material.name){
+				// todo: this doesn't work
+				case "Glas Riffelglas":
+					material.pbrMetallicRoughness.baseColorFactor = [1, 1, 1, 0.5];
+					material.pbrMetallicRoughness.metallicFactor = 0.9;
+					material.pbrMetallicRoughness.roughnessFactor = 0.02;
+				break;
+				case "Glas Normalglas":
+					material.pbrMetallicRoughness.baseColorFactor = [0.2, 0.2, 0.2, 0.5];
+					material.pbrMetallicRoughness.metallicFactor = 0.9;
+					material.pbrMetallicRoughness.roughnessFactor = 0.02;
+				break;
+				case "Metall Chrom":
+					material.pbrMetallicRoughness.metallicFactor = 0.9;
+					material.pbrMetallicRoughness.roughnessFactor = 0.02;
+				break;
+				case "Metall Aluminium, matt":
+					material.pbrMetallicRoughness.metallicFactor = 0.7;
+					material.pbrMetallicRoughness.roughnessFactor = 0.5;
+				break;
+				case "Linoleum, beige":
+					material.pbrMetallicRoughness.metallicFactor = 0.1;
+					material.pbrMetallicRoughness.roughnessFactor = 0.3;
+				break;
+				case "Metall Stahl, verzinkt":
+					material.pbrMetallicRoughness.metallicFactor = 0.6;
+					material.pbrMetallicRoughness.roughnessFactor = 0.3;
+				break;
+				default:
+					material.pbrMetallicRoughness.metallicFactor = 0.1;
+					material.pbrMetallicRoughness.roughnessFactor = 0.9;
+					console.log("default");
+				break;
+			}
+			
+			console.log(material);
+		}
 	}
 
 	async function combineMeshes(glb, flatMeshes){

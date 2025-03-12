@@ -384,21 +384,17 @@ function Renderer(canvas, shaderTexts, options){
 	}
 	
 	function renderPrimitive(primitive, transform){
+
 		
-		if(primitive.material.name == "Luft"
-		|| primitive.material.name == "Farbe, gelb"
-		|| primitive.material.name == "Farbe, blau"
-		|| primitive.material.name == "Farbe, schwarz"
-		|| primitive.material.name == "Farbe, weiss"
+		
+		if(primitive.material.name.match(/^Luft(.\d{3})?$/)
+		|| primitive.material.name.match(/^Farbe, gelb(.\d{3})?$/)
+		|| primitive.material.name.match(/^Farbe, blau(.\d{3})?$/)
+		|| primitive.material.name.match(/^Farbe, schwarz(.\d{3})?$/)
+		|| primitive.material.name.match(/^Farbe, weiss(.\d{3})?$/)
 		){
 			return false;
 		}
-		
-		/*if(primitive.material.name == "Glas Normalglas"){
-			primitive.material.pbrMetallicRoughness.baseColorFactor[3] = 0.4;
-			primitive.material.pbrMetallicRoughness.metallicFactor = 0.7;
-			primitive.material.pbrMetallicRoughness.roughnessFactor = 0.0;
-		}*/
 		
 		gl.bindBuffer(gl.ARRAY_BUFFER, primitive.normalsBuffer);
 		let normal = gl.getAttribLocation(shaderProgram, "vertexNormal");
