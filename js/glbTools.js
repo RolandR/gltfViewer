@@ -571,7 +571,6 @@ function GlbTools(options){
 			let mesh = glb.meshes[i];
 			let primitiveSizes = [];
 			let totalSize = 0;
-			console.log(mesh);
 			for(let p in mesh.processedPrimitives){
 				primitiveSizes.push(mesh.processedPrimitives[p].indexView.length/3);
 				totalSize += mesh.processedPrimitives[p].indexView.length/3;

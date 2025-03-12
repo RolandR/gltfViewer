@@ -3,8 +3,8 @@ function Viewer(canvasContainer, options){
 
 	const canvas = document.createElement("canvas");
 	canvas.id = "renderCanvas";
-	canvas.width = canvasContainer.clientWidth;
-	canvas.height = canvasContainer.clientHeight;
+	canvas.width = canvasContainer.getBoundingClientRect().width;
+	canvas.height = canvasContainer.getBoundingClientRect().height;
 	
 	canvasContainer.appendChild(canvas);
 	
@@ -99,6 +99,8 @@ function Viewer(canvasContainer, options){
 		await pMon.postMessage("Done!", "success");
 		await pMon.finish(0, 500);
 		
+		gl.setReady(true);
+		
 		render();
 		
 		return new Promise((resolve) => {
@@ -110,8 +112,14 @@ function Viewer(canvasContainer, options){
 	function initIfResourcesAreLoaded(){
 		if(outstandingResourceCount === 0){
 			
-			gl = new Renderer(canvas, shaderTexts);
+			gl = new Renderer(canvas, shaderTexts, {showSkybox: false});
 			gl.loadSkybox(skyboxTextures);
+			
+			window.addEventListener("resize", function(e){
+				canvas.width = canvasContainer.getBoundingClientRect().width;
+				canvas.height = canvasContainer.getBoundingClientRect().height;
+				gl.render();
+			});
 			
 		}
 	};
@@ -205,7 +213,7 @@ function Viewer(canvasContainer, options){
 		
 		let fieldOfViewInRadians = 40/180*Math.PI;
 		let aspectRatio = canvas.width/canvas.height;
-		let near = 0.001;
+		let near = 0.1;
 		let far = 5;
 		
 		let f = 1.0 / Math.tan(fieldOfViewInRadians / 2);

@@ -90,4 +90,6 @@ void main(void){
 	//fragColor = vec4(outColor.rgb, texColor.a);
 	fragColor = vec4(outColor.rgb, alpha);
 	
+	//fragColor = vec4(1.0, metallic, 0.0, texColor.a);
+	
 }

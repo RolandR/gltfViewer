@@ -17,8 +17,13 @@ out vec4 fragColor;
 void main(void){
     
     highp vec4 viewDirection = normalize(coord-vec4(0.0, 0.0, 2.0, 1.0));
-    
-    vec4 texColor = texture(uSkyboxSampler, normalize(transpose(mat3(view))*viewDirection.xyz));
+    //viewDirection.x = -viewDirection.x;
+	
+	vec3 textureCoord = normalize(transpose(mat3(view))*viewDirection.xyz);
+	
+	textureCoord.x = -textureCoord.x;
+	
+    vec4 texColor = texture(uSkyboxSampler, textureCoord);
 	
 	fragColor = vec4(texColor.xyz, 1.0);
 	//fragColor = vec4(0.0, 0.0, 0.0, 1.0);

@@ -1,12 +1,14 @@
 
-function Renderer(canvas, shaderTexts){
+function Renderer(canvas, shaderTexts, options){
 	
-	const gl = canvas.getContext("webgl2", {premultipliedAlpha: false, preserveDrawingBuffer: false});
+	const gl = canvas.getContext("webgl2", {premultipliedAlpha: true, preserveDrawingBuffer: false});
 
 	let shaderProgram;
 	let skyboxShaderProgram;
 	
 	let size;
+	
+	let isReady = false;
 	
 	let scene = null;
 	const meshes = [];
@@ -96,40 +98,43 @@ function Renderer(canvas, shaderTexts){
 		
 		/*   Skybox shader   */
 		
-		let skyboxVertexShader = gl.createShader(gl.VERTEX_SHADER);
-		gl.shaderSource(skyboxVertexShader, shaderTexts["skyboxVertexShader"]);
-		gl.compileShader(skyboxVertexShader);
-		
-		let skyboxFragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
-		gl.shaderSource(skyboxFragmentShader, shaderTexts["skyboxFragmentShader"]);
-		gl.compileShader(skyboxFragmentShader);
-		
-		skyboxShaderProgram = gl.createProgram();
-		gl.attachShader(skyboxShaderProgram, skyboxVertexShader); 
-		gl.attachShader(skyboxShaderProgram, skyboxFragmentShader);
-		
-		gl.linkProgram(skyboxShaderProgram);
-		
-		skyboxSkyboxSamplerRef = gl.getUniformLocation(skyboxShaderProgram, "uSkyboxSampler");
-		skyboxAspectRef = gl.getUniformLocation(skyboxShaderProgram, "aspect");
-		skyboxViewRef = gl.getUniformLocation(skyboxShaderProgram, "view");
-		
-		let skyboxVertices = new Float32Array([
-			-1.0, -1.0,
-			 1.0, -1.0,
-			-1.0,  1.0,
+		if(options.showSkybox){
 			
-			-1.0,  1.0,
-			 1.0, -1.0,
-			 1.0,  1.0
-		]);
-		
-		skyboxVertexBuffer = gl.createBuffer();
-		gl.bindBuffer(gl.ARRAY_BUFFER, skyboxVertexBuffer);
-		gl.bufferData(gl.ARRAY_BUFFER, skyboxVertices, gl.STATIC_DRAW);
-		let coord = gl.getAttribLocation(skyboxShaderProgram, "coordinates");
-		gl.vertexAttribPointer(coord, 2, gl.FLOAT, false, 0, 0);
-		gl.enableVertexAttribArray(coord);
+			let skyboxVertexShader = gl.createShader(gl.VERTEX_SHADER);
+			gl.shaderSource(skyboxVertexShader, shaderTexts["skyboxVertexShader"]);
+			gl.compileShader(skyboxVertexShader);
+			
+			let skyboxFragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
+			gl.shaderSource(skyboxFragmentShader, shaderTexts["skyboxFragmentShader"]);
+			gl.compileShader(skyboxFragmentShader);
+			
+			skyboxShaderProgram = gl.createProgram();
+			gl.attachShader(skyboxShaderProgram, skyboxVertexShader); 
+			gl.attachShader(skyboxShaderProgram, skyboxFragmentShader);
+			
+			gl.linkProgram(skyboxShaderProgram);
+			
+			skyboxSkyboxSamplerRef = gl.getUniformLocation(skyboxShaderProgram, "uSkyboxSampler");
+			skyboxAspectRef = gl.getUniformLocation(skyboxShaderProgram, "aspect");
+			skyboxViewRef = gl.getUniformLocation(skyboxShaderProgram, "view");
+			
+			let skyboxVertices = new Float32Array([
+				-1.0, -1.0,
+				 1.0, -1.0,
+				-1.0,  1.0,
+				
+				-1.0,  1.0,
+				 1.0, -1.0,
+				 1.0,  1.0
+			]);
+			
+			skyboxVertexBuffer = gl.createBuffer();
+			gl.bindBuffer(gl.ARRAY_BUFFER, skyboxVertexBuffer);
+			gl.bufferData(gl.ARRAY_BUFFER, skyboxVertices, gl.STATIC_DRAW);
+			let coord = gl.getAttribLocation(skyboxShaderProgram, "coordinates");
+			gl.vertexAttribPointer(coord, 2, gl.FLOAT, false, 0, 0);
+			gl.enableVertexAttribArray(coord);
+		}
 	}
 	
 	function loadSkybox(skyboxTextures){
@@ -143,6 +148,8 @@ function Renderer(canvas, shaderTexts){
 		skyboxTexture = gl.createTexture();
 		gl.bindTexture(gl.TEXTURE_CUBE_MAP, skyboxTexture);
 		
+		gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+		
 		gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_Y, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, skyboxUp);
 		gl.texImage2D(gl.TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, skyboxDn);
 		gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_Z, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, skyboxRt);
@@ -150,9 +157,6 @@ function Renderer(canvas, shaderTexts){
 		gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_X, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, skyboxFt);
 		gl.texImage2D(gl.TEXTURE_CUBE_MAP_NEGATIVE_X, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, skyboxBk);
 		
-		//gl.generateMipmap(gl.TEXTURE_CUBE_MAP);
-		gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
-		//gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
 		gl.generateMipmap(gl.TEXTURE_CUBE_MAP);
 		gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST);
 	}
@@ -291,24 +295,30 @@ function Renderer(canvas, shaderTexts){
 	}
 	
 	function render(model, view, perspective){
+		
+		if(!isReady){
+			return false;
+		}
 
 		// Clear the canvas
-		//gl.clearColor(1, 1, 1, 1);
+		gl.clearColor(0, 0, 0, 1);
 		
-		//gl.viewport(0, 0, canvas.width, canvas.height);
+		gl.viewport(0, 0, canvas.width, canvas.height);
 		
 		gl.enable(gl.CULL_FACE);
 		gl.cullFace(gl.BACK);
+		gl.enable(gl.DEPTH_TEST);
 
 		gl.clear(gl.COLOR_BUFFER_BIT);
 		gl.clear(gl.DEPTH_BUFFER_BIT);
 		
-		gl.disable(gl.DEPTH_TEST);
 		gl.disable(gl.BLEND);
 		
-		renderSkybox(model, view, perspective);
-		
-		gl.enable(gl.DEPTH_TEST);
+		if(options.showSkybox){
+			gl.disable(gl.DEPTH_TEST);
+			renderSkybox(model, view, perspective);
+			gl.enable(gl.DEPTH_TEST);
+		}
 		
 		gl.useProgram(shaderProgram);
 		
@@ -327,7 +337,8 @@ function Renderer(canvas, shaderTexts){
 		}
 		
 		gl.enable(gl.BLEND);
-		gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+		//gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+		gl.blendFunc(gl.SRC_COLOR, gl.DST_COLOR);
 		
 		renderTransparentPrimitives();
 	}
@@ -383,11 +394,11 @@ function Renderer(canvas, shaderTexts){
 			return false;
 		}
 		
-		if(primitive.material.name == "Glas Normalglas"){
+		/*if(primitive.material.name == "Glas Normalglas"){
 			primitive.material.pbrMetallicRoughness.baseColorFactor[3] = 0.4;
 			primitive.material.pbrMetallicRoughness.metallicFactor = 0.7;
 			primitive.material.pbrMetallicRoughness.roughnessFactor = 0.0;
-		}
+		}*/
 		
 		gl.bindBuffer(gl.ARRAY_BUFFER, primitive.normalsBuffer);
 		let normal = gl.getAttribLocation(shaderProgram, "vertexNormal");
@@ -443,7 +454,11 @@ function Renderer(canvas, shaderTexts){
 		}
 		transparentPrimitives = [];
 	}
-
+	
+	function setReady(value){
+		isReady = value;
+	}
+	
 	return{
 		 addMesh: addMesh
 		,addScene: addScene
@@ -451,6 +466,7 @@ function Renderer(canvas, shaderTexts){
 		,addTexture: addTexture
 		,loadSkybox: loadSkybox
 		,render: render
+		,setReady: setReady
 	};
 
 }

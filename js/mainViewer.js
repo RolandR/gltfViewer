@@ -101,6 +101,7 @@ function main(){
 		
 		let meshSizes = tools.getBiggestMeshes(glb.json);
 		let count = 100;
+		count = Math.min(count, meshSizes.length);
 		
 		let outString = "";
 		
