@@ -13,6 +13,8 @@ function main(){
 	const processButton = document.getElementById("processFileButton");
 	const enableRenderingButton = document.getElementById("enableRenderingButton");
 	
+	const largestMeshesContainer = document.getElementById("largestMeshes");
+	
 	const viewerPMon = new ProgressMonitor(canvasContainer, {
 		itemsCount: 1,
 		title: "Preparing renderer..."
@@ -95,6 +97,50 @@ function main(){
 		informationEl.innerHTML += "<p>Meshes: "+glb.json.meshes.length+"</p>";
 		informationEl.innerHTML += "<p>Nodes: "+glb.json.nodes.length+"</p>";
 		informationEl.innerHTML += "<p>Scenes: "+glb.json.scenes.length+"</p>";
+		
+		
+		let meshSizes = tools.getBiggestMeshes(glb.json);
+		let count = 100;
+		
+		let outString = "";
+		
+		
+		outString += "<table>";
+		outString += "<caption>";
+		outString += "<h2>Biggest meshes</h2>";
+		outString += "</caption>";
+		outString += "<thead>";
+		outString += "<tr>";
+		outString += "<th scope=\"column\">#</th>";
+		outString += "<th scope=\"column\">Tris</th>";
+		outString += "<th scope=\"column\">Mesh name</th>";
+		outString += "</tr>";
+		outString += "</thead>";
+		outString += "<tbody>";
+		
+		for(let i = 0; i < count; i++){
+			outString += "<tr>";
+			outString += "<th scope=\"row\" class=\"number\">"+(i+1)+".</td>";
+			outString += "<td class=\"number\">"+meshSizes[i].totalSize+"</td>";
+			outString += "<td>"+meshSizes[i].nodeName+"</td>";
+			
+			/*if(meshSizes[i].primitiveSizes.length > 1){
+				outString += " (";
+				for(let p in meshSizes[i].primitiveSizes){
+					if(p != 0){
+						outString += ", ";
+					}
+					outString += meshSizes[i].primitiveSizes[p];
+				}
+				outString += ")";
+			}*/
+			outString += "</tr>";
+		}
+		
+		outString += "</tbody>";
+		outString += "</table>";
+		
+		largestMeshesContainer.innerHTML += outString;
 	}
 
 }

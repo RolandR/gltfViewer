@@ -167,6 +167,11 @@ function GlbParser(pMon){
 			let node = {};
 			node.name = glb.nodes[nodes[n]].name;
 			node.mesh = glb.nodes[nodes[n]].mesh;
+			
+			if(node.mesh !== undefined){
+				glb.meshes[node.mesh].nodeName = node.name;
+			}
+			
 			if(glb.nodes[nodes[n]].matrix){
 				node.matrix = glb.nodes[nodes[n]].matrix;
 			} else {

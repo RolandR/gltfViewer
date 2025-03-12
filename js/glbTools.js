@@ -565,15 +565,16 @@ function GlbTools(options){
 		
 	}
 
-	function listBiggestMeshes(count){
+	function getBiggestMeshes(glb){
 		let meshSizes = [];
-		for(let i in flatMeshes){
-			let mesh = flatMeshes[i];
+		for(let i in glb.meshes){
+			let mesh = glb.meshes[i];
 			let primitiveSizes = [];
 			let totalSize = 0;
-			for(let p in mesh.primitives){
-				primitiveSizes.push(mesh.primitives[p].indices.length/3);
-				totalSize += mesh.primitives[p].indices.length/3;
+			console.log(mesh);
+			for(let p in mesh.processedPrimitives){
+				primitiveSizes.push(mesh.processedPrimitives[p].indexView.length/3);
+				totalSize += mesh.processedPrimitives[p].indexView.length/3;
 			}
 			let maxSize = Math.max(...primitiveSizes);
 			meshSizes.push({
@@ -594,10 +595,7 @@ function GlbTools(options){
 			}
 		});
 		
-		if(count === undefined){
-			count = meshSizes.length;
-		}
-		
+		/*
 		console.log(count+" biggest meshes by total triangle count:");
 		
 		for(let i = 0; i < count; i++){
@@ -614,6 +612,9 @@ function GlbTools(options){
 			}
 			console.log(outString);
 		}
+		*/
+		
+		return meshSizes;
 	}
 
 	function listNumberedNodes(){
@@ -653,7 +654,8 @@ function GlbTools(options){
 	}
 	
 	return {
-		process: process
+		process: process,
+		getBiggestMeshes: getBiggestMeshes
 	};
 	
 }

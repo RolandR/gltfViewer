@@ -14,16 +14,65 @@ body{
 	background-color: #333;
 	color: #f0f0f0;
 	font-size: 14px;
+	overflow-y: hidden;
+}
+
+main{
+	display: flex;
+	flex-direction: column;
+	height: 100%;
 }
 
 #upperHalf{
+	flex: 2;
 	display: flex;
-	height: 100%;
+	box-shadow: 0px 0px 40px rgba(0, 0, 0, 0.5);
+}
+
+#lowerHalf{
+	flex: 1;
+	display: flex;
+	flex-direction: row;
+	align-items: stretch;
+	overflow-y: hidden;
+}
+
+#lowerHalf > *{
+	overflow-y: auto;
+}
+
+#largestMeshes{
+	padding: 20px;
+}
+
+#largestMeshes table{
+	border-collapse: collapse;
+}
+
+#largestMeshes td, th{
+	padding: 3px 10px;
+}
+
+#largestMeshes tbody>tr:nth-child(odd){
+	background-color: rgba(255, 255, 255, 0.1);
+}
+
+#largestMeshes caption>h2{
+	text-align: left;
+	margin-bottom: 5px;
+}
+
+th{
+	text-align: left;
+}
+
+td.number, th.number{
+	text-align: right;
 }
 
 #menu{
 	width: 400px;
-	padding: 10px;
+	padding: 10px 10px 20px 10px;
 	display: flex;
 	flex-direction: column;
 	align-items: center;
@@ -120,7 +169,9 @@ button:active, #downloadButton:active .uploadLabel:active{
 #fileInformation{
 	flex: 1;
 	width: 100%;
-	padding: 20px;
+	padding: 0px 20px;
+	flex-shrink: 1;
+	overflow-y: auto;
 }
 
 #cameraZInput, #offsetYInput{

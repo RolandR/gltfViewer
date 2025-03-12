@@ -8,24 +8,29 @@
 		<link rel="stylesheet" type="text/css" media="all" href="./css/style.css" /> 
 	</head>
 	<body>
-	<body>
-		<div id="upperHalf">
-			<div id="menu">
-				<h1>glTF Wrangler</h1>
-				<label id="fileUploadButton" class="uploadLabel" for="fileUpload">Select file...<input type="file" id="fileUpload" accept=".glb"></label>
-				<div id="fileInformation">
-				
+		<main>
+			<div id="upperHalf">
+				<div id="menu">
+					<h1>glTF Wrangler</h1>
+					<label id="fileUploadButton" class="uploadLabel" for="fileUpload">Select file...<input type="file" id="fileUpload" accept=".glb"></label>
+					<div id="fileInformation">
+					
+					</div>
+					<div id="toolsContainer">
+						<button id="processFileButton">Process</button>
+					</div>
 				</div>
-				<div id="toolsContainer">
-					<button id="processFileButton">Process</button>
+				<div id="canvasContainer">
+					<button id="enableRenderingButton">Enable Rendering</button>
 				</div>
 			</div>
-			<div id="canvasContainer">
-				<button id="enableRenderingButton">Enable Rendering</button>
+			<div id="lowerHalf">
+				<div id="largestMeshes">
+				</div>
+				<div id="imagesContainer">
+				</div>
 			</div>
-		</div>
-		<div id="imagesContainer">
-		</div>
+		</main>
 	</body>
 	<script type="text/javascript" src="./js/gltf.js"></script>
 	<script type="text/javascript" src="./js/matrix.js"></script>
