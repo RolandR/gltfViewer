@@ -77,7 +77,7 @@ function Viewer(canvasContainer, options){
 		}
 		
 		for(let m in glb.materials){
-			gl.addMaterial(glb.materials[m]);
+			gl.addMaterial(glb.materials[m], m);
 		}
 		
 		await pMon.postMessage("Preparing meshes for render...", "info", glb.meshes.length);

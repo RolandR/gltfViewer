@@ -46,16 +46,20 @@ function GlbTools(options){
 			let material = glb.materials[i];
 			
 			switch(material.name){
-				// todo: this doesn't work
-				case "Glas Riffelglas":
-					material.pbrMetallicRoughness.baseColorFactor = [1, 1, 1, 0.5];
-					material.pbrMetallicRoughness.metallicFactor = 0.9;
-					material.pbrMetallicRoughness.roughnessFactor = 0.02;
-				break;
 				case "Glas Normalglas":
 					material.pbrMetallicRoughness.baseColorFactor = [0.2, 0.2, 0.2, 0.5];
 					material.pbrMetallicRoughness.metallicFactor = 0.9;
 					material.pbrMetallicRoughness.roughnessFactor = 0.02;
+				break;
+				case "Glas Riffelglas":
+					material.pbrMetallicRoughness.baseColorFactor = [0.5, 0.5, 0.5, 0.5];
+					material.pbrMetallicRoughness.metallicFactor = 0.9;
+					material.pbrMetallicRoughness.roughnessFactor = 0.1;
+				break;
+				case "Glas Milchglas":
+					material.pbrMetallicRoughness.baseColorFactor = [1, 1, 1, 0.5];
+					material.pbrMetallicRoughness.metallicFactor = 0.9;
+					material.pbrMetallicRoughness.roughnessFactor = 0.1;
 				break;
 				case "Metall Chrom":
 					material.pbrMetallicRoughness.metallicFactor = 0.9;
@@ -63,7 +67,11 @@ function GlbTools(options){
 				break;
 				case "Metall Aluminium, matt":
 					material.pbrMetallicRoughness.metallicFactor = 0.7;
-					material.pbrMetallicRoughness.roughnessFactor = 0.5;
+					material.pbrMetallicRoughness.roughnessFactor = 0.9;
+				break;
+				case "Metall Stahl matt":
+					material.pbrMetallicRoughness.metallicFactor = 0.7;
+					material.pbrMetallicRoughness.roughnessFactor = 0.9;
 				break;
 				case "Linoleum, beige":
 					material.pbrMetallicRoughness.metallicFactor = 0.1;
@@ -71,7 +79,7 @@ function GlbTools(options){
 				break;
 				case "Metall Stahl, verzinkt":
 					material.pbrMetallicRoughness.metallicFactor = 0.6;
-					material.pbrMetallicRoughness.roughnessFactor = 0.3;
+					material.pbrMetallicRoughness.roughnessFactor = 0.8;
 				break;
 				default:
 					material.pbrMetallicRoughness.metallicFactor = 0.1;
@@ -369,7 +377,7 @@ function GlbTools(options){
 			byteLength: bufferLength
 		};
 		
-		json.materials = originalJson.materials;
+		json.materials = glb.materials;
 		
 		/*======== create buffer ========*/
 		

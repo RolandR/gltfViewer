@@ -244,8 +244,8 @@ function Renderer(canvas, shaderTexts, options){
 		};
 	}
 	
-	function addMaterial(material){
-		materials[material.id] = material;
+	function addMaterial(material, id){
+		materials[id] = material;
 	}
 	
 	function addScene(s){
@@ -418,13 +418,17 @@ function Renderer(canvas, shaderTexts, options){
 		gl.bindTexture(gl.TEXTURE_CUBE_MAP, skyboxTexture);
 		gl.uniform1i(skyboxSamplerRef, 0);
 		
-		gl.activeTexture(gl.TEXTURE1);
-		gl.bindTexture(gl.TEXTURE_2D, textures[primitive.material.pbrMetallicRoughness.baseColorTexture.index]);
-		gl.uniform1i(samplerRef, 1);
+		if(primitive.material.pbrMetallicRoughness.baseColorTexture){
+			gl.activeTexture(gl.TEXTURE1);
+			gl.bindTexture(gl.TEXTURE_2D, textures[primitive.material.pbrMetallicRoughness.baseColorTexture.index]);
+			gl.uniform1i(samplerRef, 1);
+		}
 		
-		gl.activeTexture(gl.TEXTURE2);
-		gl.bindTexture(gl.TEXTURE_2D, textures[primitive.material.normalTexture.index]);
-		gl.uniform1i(normalSamplerRef, 2);
+		if(primitive.material.pbrMetallicRoughness.normalTexture){
+			gl.activeTexture(gl.TEXTURE2);
+			gl.bindTexture(gl.TEXTURE_2D, textures[primitive.material.normalTexture.index]);
+			gl.uniform1i(normalSamplerRef, 2);
+		}
 		
 		let color = primitive.material.pbrMetallicRoughness.baseColorFactor;
 		gl.uniform4f(colorRef, color[0], color[1], color[2], color[3]);

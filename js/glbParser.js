@@ -291,7 +291,7 @@ function GlbParser(pMon){
 				let mat = glb.materials[m];
 				
 				let material = {
-					id: m,
+					//id: m,
 					name: "default",
 					pbrMetallicRoughness: {
 						/*baseColorTexture: {
@@ -308,7 +308,6 @@ function GlbParser(pMon){
 					}*/
 					emissiveFactor: [0, 0, 0],
 					alphaMode: "OPAQUE",
-					alphaCutoff: 0.5,
 					doubleSided: false
 				};
 				
@@ -327,7 +326,7 @@ function GlbParser(pMon){
 						glb.textures[material.pbrMetallicRoughness.baseColorTexture.index].type = "colors";
 					} else {
 						
-						let colors = [0, 255, 0, 255];
+						/*let colors = [0, 255, 0, 255];
 						if(mat.pbrMetallicRoughness.baseColorFactor){
 							colors = mat.pbrMetallicRoughness.baseColorFactor.map((i) => i*255);
 						}
@@ -346,7 +345,7 @@ function GlbParser(pMon){
 						material.pbrMetallicRoughness.baseColorTexture = {
 							index: texId,
 							texCoord: 0
-						}
+						}*/
 						
 					}
 					if(mat.pbrMetallicRoughness.baseColorFactor){
@@ -373,7 +372,7 @@ function GlbParser(pMon){
 					glb.textures[material.normalTexture.index].type = "normal";
 				} else {
 					
-					let flatNormals = [128, 128, 255];
+					/*let flatNormals = [128, 128, 255];
 					
 					glb.textures.push({
 						isFakeTexture: true,
@@ -389,13 +388,13 @@ function GlbParser(pMon){
 					material.normalTexture = {
 						index: texId,
 						texCoord: 0
-					}
+					}*/
 				}
 				
 				if(mat.alphaMode){
 					material.alphaMode = mat.alphaMode;
 				}
-				if(mat.alphaCutoff){
+				if(mat.alphaCutoff && mat.alphaMode == "MASK"){
 					material.alphaCutoff = mat.alphaCutoff;
 				}
 				if(mat.doubleSided){
