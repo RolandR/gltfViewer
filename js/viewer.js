@@ -127,8 +127,8 @@ function Viewer(canvasContainer, options){
 	function loadResources(){
 		
 		let shaderSources = [
-			["vertexShader", "js/shaders/vertex.glsl"],
-			["fragmentShader", "js/shaders/fragment.glsl"],
+			["vertexShader", "js/shaders/debugVertex.glsl"],
+			["fragmentShader", "js/shaders/debugFragment.glsl"],
 			["skyboxVertexShader", "js/shaders/skyboxVertex.glsl"],
 			["skyboxFragmentShader", "js/shaders/skyboxFragment.glsl"],
 		];
@@ -261,8 +261,8 @@ function Viewer(canvasContainer, options){
 		
 		modelTransform = multiplyArrayOfMatrices([
 			identityTransform,
-			fixedOffsetTransform,
-			fixedScaleTransform,
+			//fixedOffsetTransform,
+			//fixedScaleTransform,
 			scaleTransform,
 			offsetTransform
 			//rotateTransform

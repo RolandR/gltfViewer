@@ -1,0 +1,46 @@
+<!doctype html>
+<html allowfullscreen>
+	<head>
+		<meta charset="utf-8" /> 
+		<title>
+			Mesh Tools
+		</title>
+		<link rel="stylesheet" type="text/css" media="all" href="./css/style.css" /> 
+		<style>
+			#upperHalf{
+				height: 100%;
+				flex-basis: 100%;
+			}
+		</style>
+	</head>
+	<body>
+		<main>
+			<div id="upperHalf">
+				<div id="menu">
+					<h1>Mesh Tools</h1>
+					<label id="fileUploadButton" class="uploadLabel" for="fileUpload">Select file...<input type="file" id="fileUpload" accept=".glb"></label>
+					<div id="fileInformation">
+						<div id="triangles">
+						
+						</div>
+					</div>
+					<div id="toolsContainer">
+						<button id="processFileButton">Process</button>
+					</div>
+				</div>
+				<div id="canvasContainer">
+					<button id="enableRenderingButton">Enable Rendering</button>
+				</div>
+			</div>
+		</main>
+	</body>
+	<script type="text/javascript" src="./js/gltf.js"></script>
+	<script type="text/javascript" src="./js/matrix.js"></script>
+	<script type="text/javascript" src="./js/progressMonitor.js"></script>
+	<script type="text/javascript" src="./js/loadFile.js"></script>
+	<script type="text/javascript" src="./js/glbParser.js"></script>
+	<script type="text/javascript" src="./js/debugGl.js"></script>
+	<script type="text/javascript" src="./js/viewer.js"></script>
+	<script type="text/javascript" src="./js/glbTools.js"></script>
+	<script type="text/javascript" src="./js/meshTools.js"></script>
+</html>
