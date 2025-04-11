@@ -138,13 +138,14 @@ button, #downloadButton, .uploadLabel{
 	display: block;
 	text-align: center;
 	background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.1), rgba(0, 0, 0, 0.3));
-	background-color: #111;
+	background-color: #fa0;
 	color: #fff;
 	text-shadow: 1px 1px 0px #000;
 	border-radius: 5px;
 	cursor: pointer;
 	text-decoration: none;
-	margin-top: 15px;
+	margin-top: 5px;
+	padding: 5px;
 }
 
 button:hover, #downloadButton:hover, .uploadLabel:hover{
@@ -160,6 +161,8 @@ button:active, #downloadButton:active .uploadLabel:active{
 	height: 40px;
 	font-size: 20px;
 	line-height: 37px;
+	margin-top: 15px;
+	padding: 0px;
 }
 
 #fileUploadButton, #downloadButton, #enableRenderingButton, #processFileButton{

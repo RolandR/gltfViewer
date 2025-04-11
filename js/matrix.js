@@ -21,6 +21,10 @@ function multiplyVectorByMatrix(v, m){
 	
 }
 
+function dotProductVec3(a, b){
+	return a[0]*b[0] + a[1]*b[1] + a[2]*b[2];
+}
+
 function normalizeVec4(a) {
 	
 	let out = [0, 0, 0, 0];
