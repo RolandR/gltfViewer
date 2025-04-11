@@ -136,11 +136,46 @@ function main(){
 				});
 			}
 			
-			processButton.style.display = "block";
-			processButton.onclick = function(){
-				
+			let findFacesButton = document.getElementById("findFacesButton");
+			findFacesButton.onclick = function(){
+				findAllFaces(triangles);
 			};
 		});
+		
+	}
+	
+	function findAllFaces(triangles){
+		
+		let trianglesAlreadyInFaces = new Set();
+		let faces = [];
+		
+		for(let t in triangles){
+			let triangle = triangles[t];
+			if(trianglesAlreadyInFaces.has(triangle)){
+				continue;
+			}
+			
+			let face = {
+				triangles: findPolygon(triangles, triangle),
+				color: [
+					Math.random()*100+50,
+					Math.random()*100+50,
+					Math.random()*100+50,
+				],
+			};
+			
+			for(let ft in face.triangles){
+				let triangle = face.triangles[ft];
+				triangle.originalColor = face.color;
+				triangle.primitive.colors.set(face.color, (triangle.points[0])*3);
+				triangle.primitive.colors.set(face.color, (triangle.points[1])*3);
+				triangle.primitive.colors.set(face.color, (triangle.points[2])*3);
+				
+				trianglesAlreadyInFaces.add(triangle);
+			}
+		}
+		
+		return faces;
 		
 	}
 	
@@ -292,9 +327,8 @@ function main(){
 			returnTriangles.push(candidateTriangles[index]);
 		}
 		
-		console.log(foundTriangleIndices);
-		
-		console.log("Face contains "+returnTriangles.length+" triangles.");
+		//console.log(foundTriangleIndices);
+		//console.log("Face contains "+returnTriangles.length+" triangles.");
 		
 		return returnTriangles;
 	}

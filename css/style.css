@@ -156,7 +156,7 @@ button:active, #downloadButton:active .uploadLabel:active{
 	background-image: linear-gradient(to top, rgba(255, 255, 255, 0.2), rgba(0, 0, 0, 0.1));
 }
 
-#processFileButton, #fileUploadButton, #downloadButton, #enableRenderingButton{
+#processFileButton, #fileUploadButton, #downloadButton, #enableRenderingButton, .bigButton{
 	width: 200px;
 	height: 40px;
 	font-size: 20px;
@@ -165,7 +165,7 @@ button:active, #downloadButton:active .uploadLabel:active{
 	padding: 0px;
 }
 
-#fileUploadButton, #downloadButton, #enableRenderingButton, #processFileButton{
+#fileUploadButton, #downloadButton, #enableRenderingButton, #processFileButton, .bigButton{
 	background-color: #fa0;
 }
 
