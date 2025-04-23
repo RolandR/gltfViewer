@@ -41,9 +41,11 @@ function main(){
 			glb = result.json;
 			
 			let triangles = [];
+			let faces = [];
 			
 			for(let m in glb.meshes){
 				let mesh = glb.meshes[m];
+				
 				for(let p in mesh.processedPrimitives){
 					let primitive = mesh.processedPrimitives[p];
 					primitive.colors = new Uint8Array(primitive.indexView.length*3);
@@ -69,6 +71,41 @@ function main(){
 								primitive.indexView[i+1],
 								primitive.indexView[i+2],
 							],
+							edges: [
+								[
+									[
+										primitive.positionView[primitive.indexView[i+0]*3+0],
+										primitive.positionView[primitive.indexView[i+0]*3+1],
+										primitive.positionView[primitive.indexView[i+0]*3+2],
+									], [
+										primitive.positionView[primitive.indexView[i+1]*3+0],
+										primitive.positionView[primitive.indexView[i+1]*3+1],
+										primitive.positionView[primitive.indexView[i+1]*3+2],
+									],
+								],
+								[
+									[
+										primitive.positionView[primitive.indexView[i+1]*3+0],
+										primitive.positionView[primitive.indexView[i+1]*3+1],
+										primitive.positionView[primitive.indexView[i+1]*3+2],
+									], [
+										primitive.positionView[primitive.indexView[i+2]*3+0],
+										primitive.positionView[primitive.indexView[i+2]*3+1],
+										primitive.positionView[primitive.indexView[i+2]*3+2],
+									],
+								],
+								[
+									[
+										primitive.positionView[primitive.indexView[i+2]*3+0],
+										primitive.positionView[primitive.indexView[i+2]*3+1],
+										primitive.positionView[primitive.indexView[i+2]*3+2],
+									], [
+										primitive.positionView[primitive.indexView[i+0]*3+0],
+										primitive.positionView[primitive.indexView[i+0]*3+1],
+										primitive.positionView[primitive.indexView[i+0]*3+2],
+									],
+								],
+							],
 							originalColor: color,
 						};
 						
@@ -78,53 +115,51 @@ function main(){
 				}
 			}
 			
+			faces = findAllFaces(triangles);
+			
+			for(let f in faces){
+				let edges = calculateEdges(faces[f]);
+				faces[f].edges = edges.edges;
+				faces[f].outsideEdges = edges.outsideEdges;
+			}
+			
 			console.log(triangles);
+			console.log(faces);
 			
-			let trianglesContainer = document.getElementById("triangles");
+			let facesContainer = document.getElementById("faces");
+			let faceCountEl = document.getElementById("faceCount");
+			faceCountEl.innerHTML = "("+faces.length+")";
 			
-			for(let t in triangles){
-				let triangle = triangles[t];
+			for(let f in faces){
+				let face = faces[f];
 				
-				let triangleEl = document.createElement("div");
-				triangleEl.className = "triangleInfo";
-				triangleEl.innerHTML = triangle.points[0] +", "+ triangle.points[1] +", "+ triangle.points[2] + "<br>";
-				triangleEl.innerHTML += "in mesh "+triangle.mesh.name;
+				let faceEl = document.createElement("div");
+				faceEl.className = "faceInfo";
+				faceEl.innerHTML = face.triangles.length + " triangles<br>";
+				faceEl.innerHTML += face.edges.length + " edges<br>";
+				faceEl.innerHTML += face.outsideEdges.length + " outside edges<br>";
 				
-				triangleEl.onmouseover = function(e){
-					let color = [255, 0, 0];
-					triangle.primitive.colors.set(color, (triangle.points[0])*3);
-					triangle.primitive.colors.set(color, (triangle.points[1])*3);
-					triangle.primitive.colors.set(color, (triangle.points[2])*3);
-				}
-				
-				triangleEl.onmouseleave = function(e){
-					let color = triangle.originalColor;
-					triangle.primitive.colors.set(color, (triangle.points[0])*3);
-					triangle.primitive.colors.set(color, (triangle.points[1])*3);
-					triangle.primitive.colors.set(color, (triangle.points[2])*3);
-				}
-				
-				let coplanarButton = document.createElement("button");
-				coplanarButton.innerHTML = "Find coplanar faces";
-				coplanarButton.style.marginTop = "-15px";
-				coplanarButton.style.float = "right";
-				
-				coplanarButton.onclick = function(){
-					let coplanarTriangles = findPolygon(triangles, triangle);
-					let color = [Math.random()*255, Math.random()*255, 0];
-
-					for(let i in coplanarTriangles){
-						let triangle = coplanarTriangles[i];
-						triangle.originalColor = color;
+				faceEl.onmouseover = function(e){
+					for(let t in face.triangles){
+						let triangle = face.triangles[t];
+						let color = [255, 0, 0];
 						triangle.primitive.colors.set(color, (triangle.points[0])*3);
 						triangle.primitive.colors.set(color, (triangle.points[1])*3);
 						triangle.primitive.colors.set(color, (triangle.points[2])*3);
 					}
 				}
 				
-				triangleEl.appendChild(coplanarButton);
+				faceEl.onmouseleave = function(e){
+					for(let t in face.triangles){
+						let triangle = face.triangles[t];
+						let color = triangle.originalColor;
+						triangle.primitive.colors.set(color, (triangle.points[0])*3);
+						triangle.primitive.colors.set(color, (triangle.points[1])*3);
+						triangle.primitive.colors.set(color, (triangle.points[2])*3);
+					}
+				}
 				
-				trianglesContainer.appendChild(triangleEl);
+				facesContainer.appendChild(faceEl);
 			}
 			
 			enableRenderingButton.style.display = "block";
@@ -136,15 +171,86 @@ function main(){
 				});
 			}
 			
-			let findFacesButton = document.getElementById("findFacesButton");
-			findFacesButton.onclick = function(){
-				findAllFaces(triangles);
-			};
 		});
 		
 	}
 	
+	function calculateEdges(face){
+		/*
+			Find all unique edges of all triangles of a face, as well as the edges forming the face's border.
+			
+			Perhaps there would be a more performant way to find these if
+			we include this in the findPolygon() function.
+		*/
+		
+		let distanceThreshold = 0.0001; // todo: find out if this value is reasonable
+		
+		let edges = [];
+		
+		for(let t in face.triangles){
+			let triangle = face.triangles[t];
+			
+			for(let e in triangle.edges){
+				let edge = triangle.edges[e];
+				
+				let edgeAlreadyExists = false;
+				
+				for(let ee in edges){
+					let existingEdge = edges[ee];
+					
+					if(
+						// check if two edges are identical
+						(
+							// point A0 equals point B0 and point A1 equals point B1
+							Math.abs(edge[0][0] - existingEdge.points[0][0]) <= distanceThreshold &&
+							Math.abs(edge[0][1] - existingEdge.points[0][1]) <= distanceThreshold &&
+							Math.abs(edge[0][2] - existingEdge.points[0][2]) <= distanceThreshold &&
+							
+							Math.abs(edge[1][0] - existingEdge.points[1][0]) <= distanceThreshold &&
+							Math.abs(edge[1][1] - existingEdge.points[1][1]) <= distanceThreshold &&
+							Math.abs(edge[1][2] - existingEdge.points[1][2]) <= distanceThreshold
+						) || (
+							// point A0 equals point B1 and point A1 equals point B0
+							Math.abs(edge[0][0] - existingEdge.points[1][0]) <= distanceThreshold &&
+							Math.abs(edge[0][1] - existingEdge.points[1][1]) <= distanceThreshold &&
+							Math.abs(edge[0][2] - existingEdge.points[1][2]) <= distanceThreshold &&
+							
+							Math.abs(edge[1][0] - existingEdge.points[0][0]) <= distanceThreshold &&
+							Math.abs(edge[1][1] - existingEdge.points[0][1]) <= distanceThreshold &&
+							Math.abs(edge[1][2] - existingEdge.points[0][2]) <= distanceThreshold
+						)
+					){
+						existingEdge.triangles.push(triangle);
+						edgeAlreadyExists = true;
+						break;
+					}
+				}
+				
+				if(!edgeAlreadyExists){
+					let newEdge = {
+						points: edge,
+						triangles: [triangle],
+					};
+					edges.push(newEdge);
+				}
+			}
+		}
+		
+		// An edge is an outside edge if it's part of only one triangle.
+		// (it may also be an "outside edge" to a hole in a face)
+		let outsideEdges = edges.filter((edge) => edge.triangles.length === 1);
+		
+		return {
+			edges: edges,
+			outsideEdges: outsideEdges,
+		};
+		
+	}
+	
 	function findAllFaces(triangles){
+		/*
+			Find all polygon faces formed by all the triangles in the list.
+		*/
 		
 		let trianglesAlreadyInFaces = new Set();
 		let faces = [];
@@ -173,6 +279,8 @@ function main(){
 				
 				trianglesAlreadyInFaces.add(triangle);
 			}
+			
+			faces.push(face);
 		}
 		
 		return faces;
@@ -216,9 +324,9 @@ function main(){
 			triangleNormal[2] = triangle.primitive.normalView[triangle.points[0]*3+2];
 			
 			if(
-				candidateNormal[0] == triangleNormal[0] && // todo: maybe add some tolerance
-				candidateNormal[1] == triangleNormal[1] &&
-				candidateNormal[2] == triangleNormal[2]
+				candidateNormal[0] === triangleNormal[0] && // todo: maybe add some tolerance
+				candidateNormal[1] === triangleNormal[1] &&
+				candidateNormal[2] === triangleNormal[2]
 			){
 				
 				trianglePoint[0] = triangle.primitive.positionView[triangle.points[0]*3+0];
@@ -248,6 +356,16 @@ function main(){
 	}
 	
 	function findPolygon(triangles, triangle){
+		
+		/*
+		
+			Find a polygon face of contiguous coplanar triangles.
+			NOTE: In this case, a face can contain triangles from different meshes.
+			This is intended behaviour for now, but we'll have to see if it actually makes sense.
+		
+		*/
+		
+		let distanceThreshold = 0.0001; // todo: find out if this value is reasonable
 		
 		let candidateTriangles = findCoplanarTriangles(triangles, triangle);
 		let foundTriangleIndices = new Set();
@@ -300,9 +418,9 @@ function main(){
 							candidatePointCoordinates[2] = candidateTriangle.primitive.positionView[candidateTriangle.points[c]*3+2];
 							
 							if(
-								candidatePointCoordinates[0] - testPointCoordinates[0] == 0 && // todo: maybe add some tolerance
-								candidatePointCoordinates[1] - testPointCoordinates[1] == 0 &&
-								candidatePointCoordinates[2] - testPointCoordinates[2] == 0
+								Math.abs(candidatePointCoordinates[0] - testPointCoordinates[0]) <= distanceThreshold &&
+								Math.abs(candidatePointCoordinates[1] - testPointCoordinates[1]) <= distanceThreshold &&
+								Math.abs(candidatePointCoordinates[2] - testPointCoordinates[2]) <= distanceThreshold
 							){
 								matchingPoints++;
 							}
